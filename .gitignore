@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
+
+# Pipenv
+Pipfile.lock
+Pipfile
+
+# Virtual environment
+venv/
+
+# macOS
+.DS_Store
+
+# Python Installer
+*.bak
+*.bak2
+*.tmp
+*.log
+*.orig
+*.swp
+*.bak
+*.cache
+*.egg-info
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code
+.vscode/
+.idea/
+
+# Python coverage data
+.coverage
+
+# Sensitive or high-importance files
+.env
