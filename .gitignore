@@ -22,6 +22,8 @@ Pipfile
 # Virtual environment
 venv/
 
+node_modules/
+
 # macOS
 .DS_Store
 
