@@ -32,7 +32,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 AUTH_USER_MODEL = "messaging.UserProfile"
 
@@ -51,11 +51,13 @@ INSTALLED_APPS = [
     # "rest_framework.authtoken", This APP is to generate AUTH TOKEN to send in headers.
     "rest_framework",
     "messaging",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -176,3 +178,7 @@ SIMPLE_JWT = {
     # "ROTATE_REFRESH_TOKENS": False,
     # "BLACKLIST_AFTER_ROTATION": False,
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
