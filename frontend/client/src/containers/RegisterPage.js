@@ -30,7 +30,7 @@ const RegisterPage = () => {
 	if (registered) return <Navigate to='/login' />;
 
 	return (
-		<Layout title='Auth Site | Register' content='Register page'>
+		<Layout title='Realtime messaging | Register' content='Register page'>
 			<h1>Register for an Account</h1>
 			<form className='mt-5' onSubmit={onSubmit}>
 				<div className='form-group'>

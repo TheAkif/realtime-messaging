@@ -9,8 +9,8 @@ const Navbar = () => {
 	const authLinks = (
 		<>
 			<li className='nav-item'>
-				<NavLink className='nav-link' to='/dashboard'>
-					Dashboard
+				<NavLink className='nav-link' to='/chat'>
+					chat
 				</NavLink>
 			</li>
 			<li className='nav-item'>
@@ -40,7 +40,7 @@ const Navbar = () => {
 		<nav className='navbar navbar-expand-lg bg-light'>
 			<div className='container-fluid'>
 				<Link className='navbar-brand' to='/'>
-					Auth Site
+					Real-time messaging
 				</Link>
 				<button
 					className='navbar-toggler'
