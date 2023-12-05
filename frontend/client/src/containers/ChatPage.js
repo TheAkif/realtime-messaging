@@ -2,21 +2,21 @@ import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import Layout from 'components/Layout';
 
-const DashboardPage = () => {
+const ChatPage = () => {
 	const { isAuthenticated, user, loading } = useSelector(state => state.user);
 
 	if (!isAuthenticated && !loading && user === null)
 		return <Navigate to='/login' />;
 
 	return (
-		<Layout title='Auth Site | Dashboard' content='Dashboard page'>
+		<Layout title='Realtime messaging | chat' content='chat page'>
 			{loading || user === null ? (
 				<div className='spinner-border text-primary' role='status'>
 					<span className='visually-hidden'>Loading...</span>
 				</div>
 			) : (
 				<>
-					<h1 className='mb-5'>Dashboard</h1>
+					<h1 className='mb-5'>chat</h1>
 					<p>User Details</p>
 					<ul>
 						<li>First Name: {user.first_name}</li>
@@ -29,4 +29,4 @@ const DashboardPage = () => {
 	);
 };
 
-export default DashboardPage;
+export default ChatPage;

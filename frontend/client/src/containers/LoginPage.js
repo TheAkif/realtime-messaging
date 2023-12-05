@@ -31,10 +31,10 @@ const LoginPage = () => {
 		dispatch(login({ email, password }));
 	};
 
-	if (isAuthenticated) return <Navigate to='/dashboard' />;
+	if (isAuthenticated) return <Navigate to='/chat' />;
 
 	return (
-		<Layout title='Auth Site | Login' content='Login page'>
+		<Layout title='Realtime messaging | Login' content='Login page'>
 			<h1>Log into your Account</h1>
 			<form className='mt-5' onSubmit={onSubmit}>
 				<div className='form-group'>
