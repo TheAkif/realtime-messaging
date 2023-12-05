@@ -4,18 +4,15 @@ const fetch = (...args) =>
 
 const router = express.Router();
 
-router.post('/api/users/register', async (req, res) => {
-	const { first_name, last_name, email, password } = req.body;
+router.get('/api/users/verify', async (req, res) => {
+	const { access } = req.cookies;
 
 	const body = JSON.stringify({
-		first_name,
-		last_name,
-		email,
-		password,
+		token: access,
 	});
 
 	try {
-		const apiRes = await fetch(`${process.env.API_URL}/api/users/register`, {
+		const apiRes = await fetch(`${process.env.API_URL}/api/token/verify/`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
@@ -29,7 +26,7 @@ router.post('/api/users/register', async (req, res) => {
 		return res.status(apiRes.status).json(data);
 	} catch (err) {
 		return res.status(500).json({
-			error: 'Something went wrong when registering account',
+			error: 'Something went wrong when trying to verify login status',
 		});
 	}
 });

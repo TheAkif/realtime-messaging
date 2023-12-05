@@ -57,17 +57,6 @@ class RegisterViewSet(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class LoginViewSet(APIView):
-    """
-    Viewset to handle Logging in a user.
-    """
-
-    def post(self, request):
-        serializer = UserCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class RetrieveUserViewSet(APIView):
     """
     Viewset to handle Retrieving a user.
