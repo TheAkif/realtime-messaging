@@ -23,5 +23,5 @@ from messaging.models import Message
 
 # Re-register UserAdmin
 # admin.site.unregister(User)
-# admin.site.register(User, CustomUserAdmin)
+admin.site.register(UserProfile)
 admin.site.register(Message)
