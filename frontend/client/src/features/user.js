@@ -54,6 +54,52 @@ const getUser = createAsyncThunk('users/me', async (_, thunkAPI) => {
 	}
 });
 
+export const getAllUsers = createAsyncThunk('users/all', async (_, thunkAPI) => {
+	try {
+		const res = await fetch('/api/users/all', {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+		});
+
+		const data = await res.json();
+
+		if (res.status === 200) {
+			return data;
+		} else {
+			return thunkAPI.rejectWithValue(data);
+		}
+	} catch (err) {
+		return thunkAPI.rejectWithValue(err.response.data);
+	}
+});
+
+
+export const getChatHistory = createAsyncThunk(
+	'chat/getChatHistory',
+	async (targetUserId, thunkAPI) => {
+		// const access = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcwMjE2MDAwMiwiaWF0IjoxNzAyMDczNjAyLCJqdGkiOiI5OTUyODdhYmY2MDQ0ODRkYjAwZTc3NjdlN2Q0YTE0NiIsInVzZXJfaWQiOjJ9.inHplIIS85ORxxKPoFANG7LZKGMJfAaikOhUuYZlTQ4"
+		try {
+			const response = await fetch(`/api/users/messages/${targetUserId}`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					// Authorization: `Bearer ${access}`,
+				},
+			});
+			const data = await response.json();
+			if (response.status === 200) {
+				return data;
+			} else {
+				return thunkAPI.rejectWithValue(data);
+			}
+		} catch (err) {
+			return thunkAPI.rejectWithValue(err.response.data);
+		}
+	}
+);
+
 export const login = createAsyncThunk(
 	'users/login',
 	async ({ email, password }, thunkAPI) => {
@@ -143,6 +189,8 @@ const initialState = {
 	user: null,
 	loading: false,
 	registered: false,
+	users: [],
+	chatHistory: null,
 };
 
 const userSlice = createSlice({
@@ -204,6 +252,26 @@ const userSlice = createSlice({
 				state.user = null;
 			})
 			.addCase(logout.rejected, state => {
+				state.loading = false;
+			})
+			.addCase(getAllUsers.pending, state => {
+				state.loading = true;
+			})
+			.addCase(getAllUsers.fulfilled, (state, action) => {
+				state.loading = false;
+				state.users = action.payload;
+			})
+			.addCase(getAllUsers.rejected, state => {
+				state.loading = false;
+			})
+			.addCase(getChatHistory.pending, state => {
+				state.loading = true;
+			})
+			.addCase(getChatHistory.fulfilled, (state, action) => {
+				state.loading = false;
+				state.chatHistory = action.payload;
+			})
+			.addCase(getChatHistory.rejected, state => {
 				state.loading = false;
 			});
 	},

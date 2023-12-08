@@ -48,10 +48,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # "rest_framework.authtoken", This APP is to generate AUTH TOKEN to send in headers.
     "rest_framework",
     "messaging",
     "corsheaders",
+    "channels",
 ]
 
 MIDDLEWARE = [

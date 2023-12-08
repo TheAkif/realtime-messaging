@@ -35,42 +35,44 @@ const LoginPage = () => {
 
 	return (
 		<Layout title='Realtime messaging | Login' content='Login page'>
-			<h1>Log into your Account</h1>
-			<form className='mt-5' onSubmit={onSubmit}>
-				<div className='form-group'>
-					<label className='form-label' htmlFor='email'>
-						Email
-					</label>
-					<input
-						className='form-control'
-						type='email'
-						name='email'
-						onChange={onChange}
-						value={email}
-						required
-					/>
+			<div className='d-flex justify-content-center align-items-center' style={{ height: '80vh' }}>
+				<div className='w-100' style={{ maxWidth: '400px' }}>
+					<h1 className='text-center mb-4'>Log into your Account</h1>
+					<form onSubmit={onSubmit}>
+						<div className='form-group mb-3'>
+							<label htmlFor='email'>Email</label>
+							<input
+								className='form-control'
+								type='email'
+								name='email'
+								onChange={onChange}
+								value={email}
+								required
+							/>
+						</div>
+						<div className='form-group mb-3'>
+							<label htmlFor='password'>Password</label>
+							<input
+								className='form-control'
+								type='password'
+								name='password'
+								onChange={onChange}
+								value={password}
+								required
+							/>
+						</div>
+						{loading ? (
+							<div className='d-flex justify-content-center'>
+								<div className='spinner-border text-primary' role='status'>
+									<span className='visually-hidden'>Loading...</span>
+								</div>
+							</div>
+						) : (
+							<button className='btn btn-primary w-100'>Login</button>
+						)}
+					</form>
 				</div>
-				<div className='form-group mt-3'>
-					<label className='form-label' htmlFor='password'>
-						Password
-					</label>
-					<input
-						className='form-control'
-						type='password'
-						name='password'
-						onChange={onChange}
-						value={password}
-						required
-					/>
-				</div>
-				{loading ? (
-					<div className='spinner-border text-primary' role='status'>
-						<span className='visually-hidden'>Loading...</span>
-					</div>
-				) : (
-					<button className='btn btn-primary mt-4'>Login</button>
-				)}
-			</form>
+			</div>
 		</Layout>
 	);
 };
