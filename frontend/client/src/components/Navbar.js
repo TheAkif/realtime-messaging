@@ -10,7 +10,7 @@ const Navbar = () => {
 		<>
 			<li className='nav-item'>
 				<NavLink className='nav-link' to='/chat'>
-					chat
+					Chatbox
 				</NavLink>
 			</li>
 			<li className='nav-item'>
