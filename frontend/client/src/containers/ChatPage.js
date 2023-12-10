@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import Layout from 'components/Layout';
@@ -12,56 +12,57 @@ const ChatPage = () => {
 		chatHistory: state.user.chatHistory,
 	}));
 	const [activeChatUser, setActiveChatUser] = useState(null);
-	// const [chatSocket, setChatSocket] = useState(null);
+
+	const [message, setMessage] = useState('');
+	const [messages, setMessages] = useState([]);
+	const ws = useRef(null);
+
+
+	useEffect(() => {
+		return () => {
+			if (ws.current) {
+				ws.current.close();
+			}
+		};
+	}, []);
+
+	const handleSendMessage = () => {
+		const payload = {
+			user_id: user.chat_uuid,
+			message: message
+		};
+		if (ws.current && message) {
+			ws.current.send(JSON.stringify(payload));
+			setMessage('');
+		}
+	};
 
 	useEffect(() => {
 		dispatch(getAllUsers());
-	}, [dispatch]); // This effect is only for fetching users
-
-	// useEffect(() => {
-	// 	if (user) {
-	// 		const newSocket = new WebSocket(`ws://your-django-backend-url/ws/chat/${user.chat_uuid}/`);
-	// 		newSocket.onmessage = (e) => {
-	// 			const data = JSON.parse(e.data);
-	// 			if (data.message) {
-	// 				setMessages(prevMessages => [...prevMessages, data.message]);
-	// 			}
-	// 		};
-	// 		newSocket.onclose = (e) => {
-	// 			console.error('Chat socket closed unexpectedly');
-	// 		};
-	// 		setChatSocket(newSocket);
-
-	// 		return () => newSocket.close();
-	// 	}
-	// }, [user]);
-
+	}, [dispatch]);
 
 	if (!isAuthenticated && !loading && user === null)
 		return <Navigate to='/login' />;
 
 	const handleUserClick = (chatUser) => {
 		setActiveChatUser(chatUser);
-		console.log(chatUser)
-		dispatch(getChatHistory(chatUser.id)); // Dispatch action to get chat history
+		dispatch(getChatHistory(chatUser.id));
+
+		if (ws.current) {
+			ws.current.close();
+		}
+
+		// Initialize WebSocket connection
+		console.log(activeChatUser.chat_uuid)
+		ws.current = new WebSocket(`ws://localhost:8000/ws/chat/${activeChatUser.chat_uuid}/`);
+		ws.current.onopen = () => console.log('WebSocket connected');
+		ws.current.onmessage = e => {
+			const data = JSON.parse(e.data);
+			setMessages(prev => [...prev, data.message]);
+		};
+		ws.current.onerror = error => console.error('WebSocket error:', error);
+		ws.current.onclose = () => console.log('WebSocket disconnected');
 	};
-
-	// const handleSendMessage = (messageText) => {
-	// 	if (!chatSocket || !messageText.trim()) return;
-
-	// 	const message = {
-	// 		senderId: user.id,
-	// 		receiverId: activeChatUser.id,
-	// 		message: messageText,
-	// 		timestamp: new Date()
-	// 	};
-
-	// 	chatSocket.send(JSON.stringify({ message: message }));
-	// 	setMessages(messages => [...messages, message]);
-	// 	// Clear the input field if necessary
-	// };
-
-	// ... (rest of your imports and component setup)
 
 	return (
 		<Layout title='Realtime messaging | Chat' content='Chat page'>
@@ -77,16 +78,17 @@ const ChatPage = () => {
 						{/* User List Sidebar */}
 						<div className='col-md-4 col-lg-3 bg-light border-right'>
 							<div className='list-group list-group-flush'>
-								{users.map((chatUser) => (
-									<button
-										key={chatUser.id}
-										type='button'
-										className={`list-group-item list-group-item-action ${activeChatUser?.id === chatUser.id ? 'active' : ''}`}
-										onClick={() => handleUserClick(chatUser)}
-									>
-										{chatUser.first_name} {chatUser.last_name}
-									</button>
-								))}
+								{users.filter(chatUser => chatUser.id !== user.id) // Filter out the current user
+									.map((chatUser) => (
+										<button
+											key={chatUser.id}
+											type='button'
+											className={`list-group-item list-group-item-action ${activeChatUser?.id === chatUser.id ? 'active' : ''}`}
+											onClick={() => handleUserClick(chatUser)}
+										>
+											{chatUser.first_name} {chatUser.last_name}
+										</button>
+									))}
 							</div>
 						</div>
 						{/* Chat Area */}
@@ -118,8 +120,19 @@ const ChatPage = () => {
 							</div>
 							{activeChatUser && (
 								<div className='chat-input p-3 border-top'>
-									<input className='form-control' type='text' placeholder='Type a message...' />
-									<button className='btn btn-primary mt-2 float-right'>Send</button>
+									<input
+										className='form-control'
+										type='text'
+										placeholder='Type a message...'
+										value={message}
+										onChange={e => setMessage(e.target.value)}
+									/>
+									<button
+										className='btn btn-primary mt-2 float-right'
+										onClick={handleSendMessage}
+									>
+										Send
+									</button>
 								</div>
 							)}
 						</div>
