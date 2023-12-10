@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 from messaging.views import MessageViewSet, RegisterViewSet, RetrieveUserViewSet, UserListViewSet
 
 router = DefaultRouter()
-# router.register(r"messages", MessageViewSet)
 router.register(r"users", UserListViewSet)
 
 urlpatterns = [

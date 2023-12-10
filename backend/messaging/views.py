@@ -4,7 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from messaging.models import Message, UserProfile
+from messaging.models import Message
 from messaging.serializers import (
     MessageSerializer,
     UserCreateSerializer,
@@ -51,16 +51,6 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         return super().get_queryset()
 
-
-    def perform_create(self, serializer):
-        instance = serializer.save(sender=self.request.user)
-
-        # Broadcast the new message to WebSocket consumers
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            "chat",  # Group name
-            {"type": "chat.message", "message": MessageSerializer(instance).data},
-        )
 
 
 class RegisterViewSet(APIView):
