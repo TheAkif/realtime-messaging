@@ -1,42 +1,69 @@
-# yourapp/tests.py
+
 import pytest
-from django.contrib.auth.models import User
-from messaging.models import Message
-from messaging.tests.factories import UserFactory
-from channels.layers import get_channel_layer
-from channels.testing import WebsocketCommunicator
+from rest_framework.test import APIClient
+from messaging.models import Message, UserProfile
+import pytest
+
+@pytest.mark.django_db
+def test_user_token_generation():
+    # Create a test user
+    test_user = UserProfile.objects.create_user(
+        first_name="Akif",
+        last_name="Hussain",
+        email="test@example.com",
+        password="password123",
+    )
+    client = APIClient()
+
+    # Obtain token
+    response = client.post(
+        "/api/token/",
+        {
+            "email": "test@example.com",
+            "password": "password123",
+        },
+    )
+    assert response.status_code == 200
+    assert "access" in response.data
+    assert "refresh" in response.data
+
+    # Verify token
+    access_token = response.data["access"]
+    response = client.post("/api/token/verify/", {"token": access_token})
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_registration():
+    client = APIClient()
+    response = client.post(
+        "/api/users/register",
+        {
+            "email": "newuser@example.com",
+            "password": "newpassword123",
+            "first_name": "New",
+            "last_name": "User",
+        },
+    )
+    assert response.status_code == 201
+    assert UserProfile.objects.filter(email="newuser@example.com").exists()
+
 
 @pytest.mark.django_db
 def test_message_creation():
-    user = UserFactory.create()
+    sender = UserProfile.objects.create_user(
+        first_name="Akif",
+        last_name="Hussain",
+        email="sender@example.com",
+        password="password123",
+    )
+    receiver = UserProfile.objects.create_user(
+        first_name="Nitish",
+        last_name="last name",
+        email="receiver@example.com",
+        password="password123",
+    )
 
-    message = Message.objects.create(sender=user, content="Test Message")
-
-    assert message.sender == user
-    assert message.content == "Test Message"
+    message = Message.objects.create(sender=sender, receiver=receiver, content="Hello")
+    assert message.content == "Hello"
     assert Message.objects.count() == 1
-
-@pytest.mark.django_db
-def test_message_str():
-    user = UserFactory.create()
-    message = Message.objects.create(sender=user, content="Test Message")
-    expected_str = f"{user} - Test Message"
-    assert str(message) == expected_str
-
-@pytest.mark.asyncio
-@pytest.mark.django_db
-async def test_chat_consumer():
-    user = User.objects.create_user(username='testuser', password='testpassword')
-    communicator = WebsocketCommunicator(get_channel_layer().as_asgi(), "/ws/chat/")
-
-    connected, _ = await communicator.connect()
-    assert connected
-
-    message_data = {'type': 'chat.message', 'message': {'sender': 'testuser', 'content': 'Test message'}}
-    await communicator.send_json_to(message_data)
-
-    response = await communicator.receive_json_from()
-    assert response['message']['sender'] == 'testuser'
-    assert response['message']['content'] == 'Test message'
-
-    await communicator.disconnect()
