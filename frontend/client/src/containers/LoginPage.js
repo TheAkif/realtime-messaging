@@ -6,7 +6,7 @@ import Layout from 'components/Layout';
 
 const LoginPage = () => {
 	const dispatch = useDispatch();
-	const { loading, isAuthenticated, registered } = useSelector(
+	const { loading, isAuthenticated, registered, error } = useSelector(
 		state => state.user
 	);
 
@@ -38,7 +38,7 @@ const LoginPage = () => {
 			<div className='d-flex justify-content-center align-items-center' style={{ height: '80vh' }}>
 				<div className='w-100' style={{ maxWidth: '400px' }}>
 					<h1 className='text-center mb-4'>Log into your Account</h1>
-					<form onSubmit={onSubmit}>
+					<form onSubmit={onSubmit} className='mb-5'>
 						<div className='form-group mb-3'>
 							<label htmlFor='email'>Email</label>
 							<input
@@ -71,6 +71,7 @@ const LoginPage = () => {
 							<button className='btn btn-primary w-100'>Login</button>
 						)}
 					</form>
+					{error && <div className="alert alert-danger">{error}</div>}
 				</div>
 			</div>
 		</Layout>

@@ -15,6 +15,8 @@ const ChatPage = () => {
 
 	const [message, setMessage] = useState('');
 	const [messages, setMessages] = useState([]);
+	const [isSendingMessage, setIsSendingMessage] = useState(false);
+
 	const ws = useRef(null);
 
 
@@ -32,6 +34,11 @@ const ChatPage = () => {
 			message: message
 		};
 		if (ws.current && message) {
+			setIsSendingMessage(true);
+			setMessages(prevMessages => [
+                ...prevMessages,
+                { ...payload, timestamp: new Date().toISOString() }
+            ]);
 			ws.current.send(JSON.stringify(payload));
 			setMessage('');
 		}
@@ -53,12 +60,15 @@ const ChatPage = () => {
 		}
 
 		// Initialize WebSocket connection
-		console.log(activeChatUser.chat_uuid)
-		ws.current = new WebSocket(`ws://localhost:8000/ws/chat/${activeChatUser.chat_uuid}/`);
+		ws.current = new WebSocket(`ws://localhost:8000/ws/chat/${chatUser.chat_uuid}/`);
 		ws.current.onopen = () => console.log('WebSocket connected');
 		ws.current.onmessage = e => {
 			const data = JSON.parse(e.data);
 			setMessages(prev => [...prev, data.message]);
+			if (activeChatUser) {
+				dispatch(getChatHistory(activeChatUser.id));
+			}
+			setIsSendingMessage(false);
 		};
 		ws.current.onerror = error => console.error('WebSocket error:', error);
 		ws.current.onclose = () => console.log('WebSocket disconnected');
@@ -78,7 +88,7 @@ const ChatPage = () => {
 						{/* User List Sidebar */}
 						<div className='col-md-4 col-lg-3 bg-light border-right'>
 							<div className='list-group list-group-flush'>
-								{users.filter(chatUser => chatUser.id !== user.id) // Filter out the current user
+								{users.filter(chatUser => user && chatUser.id !== user.id) // Filter out the current user
 									.map((chatUser) => (
 										<button
 											key={chatUser.id}
@@ -126,13 +136,16 @@ const ChatPage = () => {
 										placeholder='Type a message...'
 										value={message}
 										onChange={e => setMessage(e.target.value)}
+										disabled={isSendingMessage}
 									/>
 									<button
 										className='btn btn-primary mt-2 float-right'
 										onClick={handleSendMessage}
+										disabled={isSendingMessage}
 									>
 										Send
 									</button>
+									{isSendingMessage && <div className="loader">Sending...</div>}
 								</div>
 							)}
 						</div>
