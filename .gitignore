@@ -16,8 +16,8 @@ db.sqlite3-journal
 *.sqlite3-journal
 
 # Pipenv
-Pipfile.lock
-Pipfile
+# Pipfile.lock
+# Pipfile
 
 # Virtual environment
 venv/
@@ -50,4 +50,4 @@ __pycache__
 .coverage
 
 # Sensitive or high-importance files
-.env
+# .env

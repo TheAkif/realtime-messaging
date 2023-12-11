@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+channels = "*"
+djangorestframework = "*"
+factory-boy = "*"
+channels-redis = "*"
+uvicorn = {extras = ["standard"] }
+djangorestframework-simplejwt = "*"
+pytest = "*"
+pytest-django = "*"
+django-cors-headers = "*"
+
+[requires]
+python_version = "3.11"
+python_full_version = "3.11.5"
+
+[dev-packages]
+pytest = "*"

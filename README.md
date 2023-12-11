@@ -89,8 +89,48 @@ npm start
 Now visit http://localhost:3000.
 
 
+6. **Deployment using PM2**:
 
+- Install pm2 on the root of this project using:
+```bash
+npm install pm2@latest -g
+```
 
-6. **API Documentation**:
+- Run the following command:
+```bash
+pm2 start ecosystem.config.js
+```
+- All three services will run on different ports: Frontend-react: http://localhost:3000, Frontend-express: http://localhost:5000 and Backend: http://127.0.0.1:8000.
 
-Make sure you have your backend and frontend up and running. Go to http://0.0.0.0:8000/docs.
+- You can access any service's logs using:
+```bash
+pm2 logs SERVICE_NAME
+```
+
+- You can list down all services using:
+```bash
+pm2 list
+```
+
+- You can stop any service using:
+```bash
+pm2 stop SERVICE_NAME
+```
+
+- You can stop all services at once using:
+```bash
+pm2 stop all
+```
+
+7. **Dpeloyment using docker**:
+
+In progress.
+
+8. **API Documentation**:
+The RESTful API supports the following operations:
+
+ - POST /api/register: Register a new user.
+ - POST /api/login: Authenticate a user.
+ - GET /api/messages: Retrieve messages.
+ - POST /api/message: Send a new message.
+ 
