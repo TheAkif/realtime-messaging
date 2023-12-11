@@ -79,13 +79,12 @@ export const getAllUsers = createAsyncThunk('users/all', async (_, thunkAPI) => 
 export const getChatHistory = createAsyncThunk(
 	'chat/getChatHistory',
 	async (targetUserId, thunkAPI) => {
-		// const access = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcwMjE2MDAwMiwiaWF0IjoxNzAyMDczNjAyLCJqdGkiOiI5OTUyODdhYmY2MDQ0ODRkYjAwZTc3NjdlN2Q0YTE0NiIsInVzZXJfaWQiOjJ9.inHplIIS85ORxxKPoFANG7LZKGMJfAaikOhUuYZlTQ4"
+
 		try {
 			const response = await fetch(`/api/users/messages/${targetUserId}`, {
 				method: 'GET',
 				headers: {
 					Accept: 'application/json',
-					// Authorization: `Bearer ${access}`,
 				},
 			});
 			const data = await response.json();
@@ -191,6 +190,7 @@ const initialState = {
 	registered: false,
 	users: [],
 	chatHistory: null,
+	error: null,
 };
 
 const userSlice = createSlice({
@@ -200,38 +200,53 @@ const userSlice = createSlice({
 		resetRegistered: state => {
 			state.registered = false;
 		},
+		setError: (state, action) => {
+            state.error = action.payload;
+        },
+        clearError: state => {
+            state.error = null;
+        },
 	},
 	extraReducers: builder => {
 		builder
 			.addCase(register.pending, state => {
 				state.loading = true;
+				state.error = null;
 			})
 			.addCase(register.fulfilled, state => {
 				state.loading = false;
 				state.registered = true;
+                state.error =null;
 			})
-			.addCase(register.rejected, state => {
+			.addCase(register.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.non_field_errors || "An error occurred";
 			})
 			.addCase(login.pending, state => {
 				state.loading = true;
+                state.error = null;
 			})
 			.addCase(login.fulfilled, state => {
 				state.loading = false;
 				state.isAuthenticated = true;
+                state.error = null;
 			})
-			.addCase(login.rejected, state => {
+			.addCase(login.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
 			})
 			.addCase(getUser.pending, state => {
 				state.loading = true;
+                state.error = null;
 			})
 			.addCase(getUser.fulfilled, (state, action) => {
 				state.loading = false;
 				state.user = action.payload;
+                state.error = null;
 			})
-			.addCase(getUser.rejected, state => {
+			.addCase(getUser.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
 			})
 			.addCase(checkAuth.pending, state => {
 				state.loading = true;
@@ -245,34 +260,43 @@ const userSlice = createSlice({
 			})
 			.addCase(logout.pending, state => {
 				state.loading = true;
+                state.error = null;
 			})
 			.addCase(logout.fulfilled, state => {
 				state.loading = false;
 				state.isAuthenticated = false;
 				state.user = null;
+                state.error = null;
 			})
-			.addCase(logout.rejected, state => {
+			.addCase(logout.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
 			})
 			.addCase(getAllUsers.pending, state => {
 				state.loading = true;
+                state.error = null;
 			})
 			.addCase(getAllUsers.fulfilled, (state, action) => {
 				state.loading = false;
 				state.users = action.payload;
+                state.error = null;
 			})
-			.addCase(getAllUsers.rejected, state => {
+			.addCase(getAllUsers.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
 			})
 			.addCase(getChatHistory.pending, state => {
 				state.loading = true;
+                state.error = null;
 			})
 			.addCase(getChatHistory.fulfilled, (state, action) => {
 				state.loading = false;
 				state.chatHistory = action.payload;
+                state.error = null;
 			})
-			.addCase(getChatHistory.rejected, state => {
+			.addCase(getChatHistory.rejected, (state, action) => {
 				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
 			});
 	},
 });

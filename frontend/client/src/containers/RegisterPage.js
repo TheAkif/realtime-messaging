@@ -6,7 +6,7 @@ import { register } from 'features/user';
 
 const RegisterPage = () => {
 	const dispatch = useDispatch();
-	const { registered, loading } = useSelector(state => state.user);
+	const { registered, loading, error } = useSelector(state => state.user);
 
 	const [formData, setFormData] = useState({
 		first_name: '',
@@ -89,6 +89,7 @@ const RegisterPage = () => {
 							<button className='btn btn-primary w-100 mt-3'>Register</button>
 						)}
 					</form>
+					{error && <div className="alert alert-danger">{error}</div>}
 				</div>
 			</div>
 		</Layout>
