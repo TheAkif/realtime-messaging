@@ -16,6 +16,7 @@ djangorestframework-simplejwt = "*"
 pytest = "*"
 pytest-django = "*"
 django-cors-headers = "*"
+pycryptodome = "*"
 
 [requires]
 python_version = "3.11"

@@ -3,6 +3,14 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 import json
 
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+import base64
+import os
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.other_user_uuid = self.scope["url_route"]["kwargs"]["chat_uuid"]
@@ -28,8 +36,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             id=sender.id
         )
         from messaging.models import Message
+        encrypted_message = self.encrypt(message)
 
-        Message.objects.create(sender=sender, receiver=receiver, content=message)
+        Message.objects.create(sender=sender, receiver=receiver, content=encrypted_message)
 
     async def receive(self, text_data):
         print("Received text data:", text_data)
@@ -67,3 +76,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return UserProfile.objects.get(chat_uuid=chat_uuid)
         except UserProfile.DoesNotExist:
             return None
+
+    def pad(self, s):
+        return s + (AES.block_size - len(s) % AES.block_size) * chr(AES.block_size - len(s) % AES.block_size)
+
+    def unpad(self, s):
+        return s[:-ord(s[len(s) - 1:])]
+
+    def encrypt(self, plain_text):
+        import pdb
+        pdb.set_trace()
+        plain_text = self.pad(plain_text)
+        cipher = AES.new(SECRET_KEY, AES.MODE_ECB)
+        return base64.b64encode(cipher.encrypt(plain_text.encode('utf-8')))
+
+    def decrypt(self, cipher_text):
+        cipher = AES.new(SECRET_KEY, AES.MODE_ECB)
+        return self.unpad(cipher.decrypt(base64.b64decode(cipher_text)).decode('utf-8'))

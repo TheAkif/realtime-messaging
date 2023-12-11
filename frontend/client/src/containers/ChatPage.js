@@ -3,6 +3,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import Layout from 'components/Layout';
 import { getAllUsers, getChatHistory } from 'features/user'
+import AES from 'crypto-js/aes';
+import Utf8 from 'crypto-js/enc-utf8';
+
+const secretKey = process.env.SECRET_KEY;
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
@@ -19,6 +23,23 @@ const ChatPage = () => {
 
 	const ws = useRef(null);
 
+	const decryptMessage = (cipherText) => {
+		const bytes = AES.decrypt(cipherText, secretKey);
+		return bytes.toString(Utf8);
+	};
+
+    const decryptMessages = (encryptedMessages) => {
+        return encryptedMessages.map((msg) => ({
+            ...msg,
+            content: AES.decrypt(msg.content, secretKey).toString(Utf8)
+        }));
+    };
+
+    useEffect(() => {
+        if (chatHistory) {
+            setMessages(decryptMessages(chatHistory));
+        }
+    }, [chatHistory]);
 
 	useEffect(() => {
 		return () => {
@@ -64,7 +85,8 @@ const ChatPage = () => {
 		ws.current.onopen = () => console.log('WebSocket connected');
 		ws.current.onmessage = e => {
 			const data = JSON.parse(e.data);
-			setMessages(prev => [...prev, data.message]);
+			const decryptedMessage = decryptMessage(data.message);
+			setMessages(prev => [...prev, decryptedMessage]);
 			if (activeChatUser) {
 				dispatch(getChatHistory(activeChatUser.id));
 			}
