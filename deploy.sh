@@ -27,21 +27,23 @@ nohup npm start > frontend.log 2>&1 &
 echo "Navigating to /backend..."
 cd backend/
 
-# Install dependencies from Pipfile
+# Create/activate a virtual environment and install dependencies
 echo "Installing dependencies..."
-pipenv install
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
 # Run database migrations
 echo "Running database migrations..."
-pipenv run python3 manage.py migrate
+python3 manage.py migrate
 
 # Collect static files
 echo "Collecting static files..."
-pipenv run python3 manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput
 
 echo "Export env variable"
 export DJANGO_SETTINGS_MODULE=realtime_messaging_project.settings
 
-# Start Uvicorn with pipenv, binding it to 0.0.0.0 so it can accept requests from any IP
+# Start Uvicorn, binding it to 0.0.0.0 so it can accept requests from any IP
 echo "Starting Uvicorn server..."
-pipenv run uvicorn realtime_messaging_project.asgi:application --port 8000
+uvicorn realtime_messaging_project.asgi:application --host 0.0.0.0 --port 8000

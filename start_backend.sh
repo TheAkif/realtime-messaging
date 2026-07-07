@@ -1,10 +1,21 @@
 #!/bin/bash
 
+# Exit on any error
+set -e
+
+# Always run from backend/, regardless of the caller's working directory.
+cd "$(dirname "$0")/backend"
+
+# Activate the virtual environment if one exists
+if [ -f "venv/bin/activate" ]; then
+  source venv/bin/activate
+fi
+
 # Run Django migrations
-pipenv run python3 manage.py migrate
+python3 manage.py migrate
 
 # Collect static files
-pipenv run python3 manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput
 
 # Start Uvicorn server
-pipenv run uvicorn realtime_messaging_project.asgi:application --host 0.0.0.0 --port 8000
+uvicorn realtime_messaging_project.asgi:application --host 0.0.0.0 --port 8000

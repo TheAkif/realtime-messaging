@@ -13,6 +13,11 @@ const chatRoute = require('./routes/chat/chat')
 
 const app = express();
 
+// Trust the X-Forwarded-Proto header nginx sets, so req.secure reflects the
+// scheme the browser actually used even though this app itself only ever
+// speaks plain HTTP to nginx.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(cookieParser());
 

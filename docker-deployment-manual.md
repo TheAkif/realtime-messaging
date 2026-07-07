@@ -43,35 +43,47 @@ git clone https://github.com/TheAkif/realtime-messaging.git
 ```
 
 3. cd `realtime-messaging/`
-4. Here you should have a directory named `certs/` in which you should have two files: `dezzex.crt` and `dezzex.key`.
-5. Run the following command. It will download all the dependencies and setup the dockers for backend, frontend, nginx and postgres:
+4. By default this serves over plain HTTP (port 80) and doesn't require any certificates - fine
+   for local testing or getting started. If you want HTTPS, put your certificate/key in a `certs/`
+   directory and uncomment the `443` server block in `nginx/nginx.conf` (see the comments there).
+5. If you're deploying behind a real domain, set `PUBLIC_URL` so the frontend build and CORS know
+   where they're actually served from:
 
 ```bash
-docker-compose up --build -d
+export PUBLIC_URL=https://yourdomain.com
 ```
 
-6. It will take some time to build the frontend service, check after couple of minutes.
-7. Once everything is set. Go to https://
+6. Run the following command. It will download all the dependencies and set up the containers for
+   postgres, redis, the backend, the frontend, and nginx:
+
+```bash
+docker compose up --build -d
+```
+
+7. It will take some time to build the frontend and backend images the first time; check with
+   `docker compose ps` after a couple of minutes to confirm every service is `healthy`/`running`.
+8. Once everything is up, visit http://localhost (or https://yourdomain.com if you configured
+   real certificates and `PUBLIC_URL`).
 
 
 ## Access containers
 
 ### Docker logs
 
-- Once everything is running you can check for logs of every container by running the following command:
+- Once everything is running you can check for logs of every service by running the following command:
 
 ```bash
-docker logs SERVICE_NAME
+docker compose logs SERVICE_NAME
 ```
 
-Service name could be: `backend`, `frontend`, `nginx` or `frontend`.
+Service name could be: `postgres`, `redis`, `backend`, `frontend`, or `nginx`.
 
 ### Follow Docker logs
 
-If you want to see the logs of certain container continuously in real-time, you can run the following command:
+If you want to see the logs of a certain service continuously in real-time, you can run the following command:
 
 ```bash
-docker logs SERVICE_NAME --follow
+docker compose logs -f SERVICE_NAME
 ```
 
 ### Get into container

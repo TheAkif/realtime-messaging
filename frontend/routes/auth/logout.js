@@ -10,14 +10,14 @@ router.get('/api/users/logout', (req, res) => {
 			expires: new Date(0),
 			path: '/api/',
 			sameSite: 'strict',
-			secure: process.env.NODE_ENV === 'production',
+			secure: req.secure,
 		}),
 		cookie.serialize('refresh', '', {
 			httpOnly: true,
 			expires: new Date(0),
 			path: '/api/',
 			sameSite: 'strict',
-			secure: process.env.NODE_ENV === 'production',
+			secure: req.secure,
 		}),
 	]);
 
