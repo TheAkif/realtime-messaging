@@ -50,4 +50,7 @@ __pycache__
 .coverage
 
 # Sensitive or high-importance files
-# .env
+.env
+
+# Local scratch docs (not for the repo)
+ISSUES.md
