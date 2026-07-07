@@ -162,6 +162,22 @@ export const checkAuth = createAsyncThunk(
 	}
 );
 
+export const getWsTicket = async () => {
+	const res = await fetch('/api/users/ws-ticket', {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+		},
+	});
+
+	if (res.status !== 200) {
+		throw new Error('Could not start a chat session');
+	}
+
+	const data = await res.json();
+	return data.ticket;
+};
+
 export const logout = createAsyncThunk('users/logout', async (_, thunkAPI) => {
 	try {
 		const res = await fetch('/api/users/logout', {
@@ -205,6 +221,10 @@ const userSlice = createSlice({
         },
         clearError: state => {
             state.error = null;
+        },
+        appendChatMessage: (state, action) => {
+            if (!state.chatHistory) state.chatHistory = [];
+            state.chatHistory.push(action.payload);
         },
 	},
 	extraReducers: builder => {
@@ -301,5 +321,5 @@ const userSlice = createSlice({
 	},
 });
 
-export const { resetRegistered } = userSlice.actions;
+export const { resetRegistered, appendChatMessage } = userSlice.actions;
 export default userSlice.reducer;

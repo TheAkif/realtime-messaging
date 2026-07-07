@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import Layout from 'components/Layout';
-import { getAllUsers, getChatHistory } from 'features/user'
+import { getAllUsers, getChatHistory, getWsTicket, appendChatMessage } from 'features/user'
+import { WS_URL } from 'config';
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
@@ -14,7 +15,6 @@ const ChatPage = () => {
 	const [activeChatUser, setActiveChatUser] = useState(null);
 
 	const [message, setMessage] = useState('');
-	const [messages, setMessages] = useState([]);
 	const [isSendingMessage, setIsSendingMessage] = useState(false);
 
 	const ws = useRef(null);
@@ -29,17 +29,9 @@ const ChatPage = () => {
 	}, []);
 
 	const handleSendMessage = () => {
-		const payload = {
-			user_id: user.chat_uuid,
-			message: message
-		};
 		if (ws.current && message) {
 			setIsSendingMessage(true);
-			setMessages(prevMessages => [
-                ...prevMessages,
-                { ...payload, timestamp: new Date().toISOString() }
-            ]);
-			ws.current.send(JSON.stringify(payload));
+			ws.current.send(JSON.stringify({ message }));
 			setMessage('');
 		}
 	};
@@ -51,7 +43,7 @@ const ChatPage = () => {
 	if (!isAuthenticated && !loading && user === null)
 		return <Navigate to='/login' />;
 
-	const handleUserClick = (chatUser) => {
+	const handleUserClick = async (chatUser) => {
 		setActiveChatUser(chatUser);
 		dispatch(getChatHistory(chatUser.id));
 
@@ -59,19 +51,28 @@ const ChatPage = () => {
 			ws.current.close();
 		}
 
+		let ticket;
+		try {
+			ticket = await getWsTicket();
+		} catch (err) {
+			console.error('Could not start chat session:', err);
+			return;
+		}
+
 		// Initialize WebSocket connection
-		ws.current = new WebSocket(`ws://localhost:8000/ws/chat/${chatUser.chat_uuid}/`);
+		ws.current = new WebSocket(`${WS_URL}/ws/chat/${chatUser.chat_uuid}/?ticket=${ticket}`);
 		ws.current.onopen = () => console.log('WebSocket connected');
 		ws.current.onmessage = e => {
 			const data = JSON.parse(e.data);
-			setMessages(prev => [...prev, data.message]);
-			if (activeChatUser) {
-				dispatch(getChatHistory(activeChatUser.id));
-			}
+			dispatch(appendChatMessage({
+				sender: data.sender,
+				content: data.message,
+				timestamp: data.timestamp,
+			}));
 			setIsSendingMessage(false);
 		};
 		ws.current.onerror = error => console.error('WebSocket error:', error);
-		ws.current.onclose = () => console.log('WebSocket disconnected');
+		ws.current.onclose = e => console.log('WebSocket disconnected', e.code);
 	};
 
 	return (

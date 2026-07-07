@@ -30,14 +30,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG")
+DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 AUTH_USER_MODEL = "messaging.UserProfile"
 
 # realtime_messaging_project/settings.py
-ASGI_APPLICATION = "realtime_messaging_project.routing.application"
+ASGI_APPLICATION = "realtime_messaging_project.asgi.application"
 
 # Application definition
 
@@ -86,12 +86,15 @@ TEMPLATES = [
 # WSGI_APPLICATION = "realtime_messaging_project.wsgi.application"
 
 
-# Set up channel layer to use Redis
+# Redis is shared by the Channels layer and the WS ticket store (messaging/ws_tickets.py)
+REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }

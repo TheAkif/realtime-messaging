@@ -50,6 +50,32 @@ def test_user_registration():
 
 
 @pytest.mark.django_db
+def test_ws_ticket_requires_auth():
+    client = APIClient()
+    response = client.get("/api/users/ws-ticket")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_ws_ticket_issued_for_authenticated_user():
+    UserProfile.objects.create_user(
+        first_name="Akif",
+        last_name="Hussain",
+        email="ticket@example.com",
+        password="password123",
+    )
+    client = APIClient()
+    token_res = client.post(
+        "/api/token/", {"email": "ticket@example.com", "password": "password123"}
+    )
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    response = client.get("/api/users/ws-ticket")
+    assert response.status_code == 200
+    assert response.data["ticket"]
+
+
+@pytest.mark.django_db
 def test_message_creation():
     sender = UserProfile.objects.create_user(
         first_name="Akif",
