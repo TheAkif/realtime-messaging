@@ -1,69 +1,116 @@
-from http.client import HTTPException
+import logging
+from urllib.parse import parse_qs
+
+from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 import json
 
+from messaging.ws_tickets import consume_ticket
+
+logger = logging.getLogger(__name__)
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        query_params = parse_qs(self.scope["query_string"].decode())
+        ticket = query_params.get("ticket", [None])[0]
+
+        user_id = await sync_to_async(consume_ticket)(ticket)
+        if not user_id:
+            logger.warning("WS connect rejected: missing/invalid/expired ticket")
+            await self.close(code=4401)
+            return
+
+        self.user = await self.get_user_by_id(user_id)
+        if not self.user:
+            logger.warning("WS connect rejected: ticket resolved to no user (id=%s)", user_id)
+            await self.close(code=4401)
+            return
+
         self.other_user_uuid = self.scope["url_route"]["kwargs"]["chat_uuid"]
-        self.other_user = self.get_user_by_uuid(self.other_user_uuid)
+        self.other_user = await self.get_user_by_uuid(self.other_user_uuid)
 
-        if self.other_user:
-            self.room_name = f"chat__{self.other_user_uuid}"
+        if not self.other_user or self.other_user.id == self.user.id:
+            logger.warning(
+                "WS connect rejected: user %s requested unknown/self target %s",
+                self.user.id, self.other_user_uuid,
+            )
+            await self.close(code=4404)
+            return
 
-            await self.channel_layer.group_add(self.room_name, self.channel_name)
+        # Canonical, order-independent room shared by both participants,
+        # regardless of which of them "other_user_uuid" refers to.
+        pair = sorted([str(self.user.chat_uuid), str(self.other_user.chat_uuid)])
+        self.room_name = f"chat__{pair[0]}__{pair[1]}"
 
-            await self.accept()
-        else:
-            await self.close()
+        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+        if hasattr(self, "room_name"):
+            await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     @database_sync_to_async
     def save_message(self, sender, receiver, message):
-        from messaging.models import UserProfile
-
-        sender = UserProfile.objects.get(
-            id=sender.id
-        )
         from messaging.models import Message
 
-        Message.objects.create(sender=sender, receiver=receiver, content=message)
+        message_obj = Message.objects.create(
+            sender=sender, receiver=receiver, content=message
+        )
+        return message_obj.timestamp.isoformat()
 
     async def receive(self, text_data):
-        print("Received text data:", text_data)
-        if text_data:
-            try:
-                text_data_json = json.loads(text_data)
-                message = text_data_json.get("message")
-                chat_uuid = text_data_json.get("user_id")
-                sender = self.get_user_by_uuid(chat_uuid)
+        if not text_data:
+            return
 
-                if message:
-                    # Save the message to the database
-                    await self.save_message(
-                        sender, self.other_user, message
-                    )
+        try:
+            text_data_json = json.loads(text_data)
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"error": "Invalid message format."}))
+            return
 
-                    await self.channel_layer.group_send(
-                        self.room_name, {"type": "chat_message", "message": message}
-                    )
-            except json.JSONDecodeError:
-                raise HTTPException("Text message format not defined.")
-        else:
-            print("Received empty text_data")
+        message = text_data_json.get("message")
+        if not message:
+            return
+
+        timestamp = await self.save_message(self.user, self.other_user, message)
+
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                "type": "chat_message",
+                "message": message,
+                "sender": self.user.id,
+                "timestamp": timestamp,
+            },
+        )
 
     async def chat_message(self, event):
-        print(f"inside chat_message() ${event}")
-        message = event["message"]
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "message": event["message"],
+                    "sender": event["sender"],
+                    "timestamp": event["timestamp"],
+                }
+            )
+        )
 
-        await self.send(text_data=json.dumps({"message": message}))
-
+    @database_sync_to_async
     def get_user_by_uuid(self, chat_uuid):
         from messaging.models import UserProfile
 
         try:
             return UserProfile.objects.get(chat_uuid=chat_uuid)
-        except UserProfile.DoesNotExist:
+        except (UserProfile.DoesNotExist, ValueError):
+            return None
+
+    @database_sync_to_async
+    def get_user_by_id(self, user_id):
+        from messaging.models import UserProfile
+
+        try:
+            return UserProfile.objects.get(id=user_id)
+        except (UserProfile.DoesNotExist, ValueError):
             return None

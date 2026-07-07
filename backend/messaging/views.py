@@ -10,6 +10,7 @@ from messaging.serializers import (
     UserCreateSerializer,
     UserReadOnlySerializer,
 )
+from messaging.ws_tickets import create_ticket
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
@@ -84,3 +85,17 @@ class RetrieveUserViewSet(APIView):
         user = request.user
         user = UserReadOnlySerializer(user)
         return Response(user.data, status=status.HTTP_200_OK)
+
+
+class WSTicketView(APIView):
+    """
+    Mints a short-lived, single-use ticket that the frontend attaches to the
+    chat WebSocket URL, since a WebSocket handshake can't carry the JWT
+    cookie/header this endpoint is authenticated with.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ticket = create_ticket(request.user.id)
+        return Response({"ticket": ticket}, status=status.HTTP_200_OK)
