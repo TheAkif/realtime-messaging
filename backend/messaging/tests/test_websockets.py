@@ -51,6 +51,7 @@ async def test_two_real_users_share_a_room_and_see_each_others_messages():
     # user2 receives it, correctly attributed to user1 - not to whatever
     # user_id user2's own client might have sent.
     response2 = await communicator2.receive_json_from()
+    assert response2["type"] == "message"
     assert response2["message"] == "Hello, user2!"
     assert response2["sender"] == user1.id
 
@@ -59,6 +60,40 @@ async def test_two_real_users_share_a_room_and_see_each_others_messages():
     response1 = await communicator1.receive_json_from()
     assert response1["message"] == "Hello, user2!"
     assert response1["sender"] == user1.id
+
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_typing_notification_reaches_the_other_party_only():
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    ticket1 = _login_and_get_ticket("user1@example.com", "password123")
+    ticket2 = _login_and_get_ticket("user2@example.com", "password123")
+
+    communicator1 = WebsocketCommunicator(
+        application, f"/ws/chat/{user2.chat_uuid}/?ticket={ticket1}"
+    )
+    communicator2 = WebsocketCommunicator(
+        application, f"/ws/chat/{user1.chat_uuid}/?ticket={ticket2}"
+    )
+    assert (await communicator1.connect())[0]
+    assert (await communicator2.connect())[0]
+
+    await communicator1.send_json_to({"type": "typing"})
+
+    response2 = await communicator2.receive_json_from()
+    assert response2 == {"type": "typing", "sender": user1.id}
+
+    # The sender doesn't get their own typing notification echoed back.
+    assert await communicator1.receive_nothing(timeout=0.2)
 
     await communicator1.disconnect()
     await communicator2.disconnect()

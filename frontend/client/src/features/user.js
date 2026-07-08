@@ -75,6 +75,27 @@ export const getAllUsers = createAsyncThunk('users/all', async (_, thunkAPI) => 
 	}
 });
 
+export const getConversations = createAsyncThunk('users/conversations', async (_, thunkAPI) => {
+	try {
+		const res = await fetch('/api/users/conversations', {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+		});
+
+		const data = await res.json();
+
+		if (res.status === 200) {
+			return data;
+		} else {
+			return thunkAPI.rejectWithValue(data);
+		}
+	} catch (err) {
+		return thunkAPI.rejectWithValue(err.response.data);
+	}
+});
+
 
 export const getChatHistory = createAsyncThunk(
 	'chat/getChatHistory',
@@ -203,8 +224,10 @@ const initialState = {
 	isAuthenticated: false,
 	user: null,
 	loading: false,
+	historyLoading: false,
 	registered: false,
 	users: [],
+	conversations: [],
 	chatHistory: null,
 	error: null,
 };
@@ -222,9 +245,27 @@ const userSlice = createSlice({
         clearError: state => {
             state.error = null;
         },
-        appendChatMessage: (state, action) => {
+        receiveLiveMessage: (state, action) => {
+            const { message, contactId } = action.payload;
             if (!state.chatHistory) state.chatHistory = [];
-            state.chatHistory.push(action.payload);
+            state.chatHistory.push(message);
+
+            const conversation = state.conversations.find(c => c.id === contactId);
+            if (conversation) {
+                conversation.last_message = {
+                    content: message.content,
+                    timestamp: message.timestamp,
+                    sender: message.sender,
+                };
+                state.conversations = [
+                    conversation,
+                    ...state.conversations.filter(c => c.id !== contactId),
+                ];
+            }
+        },
+        markConversationRead: (state, action) => {
+            const conversation = state.conversations.find(c => c.id === action.payload);
+            if (conversation) conversation.unread_count = 0;
         },
 	},
 	extraReducers: builder => {
@@ -305,21 +346,34 @@ const userSlice = createSlice({
 				state.loading = false;
                 state.error = action.payload.detail || "An error occurred";
 			})
-			.addCase(getChatHistory.pending, state => {
+			.addCase(getConversations.pending, state => {
 				state.loading = true;
                 state.error = null;
 			})
-			.addCase(getChatHistory.fulfilled, (state, action) => {
+			.addCase(getConversations.fulfilled, (state, action) => {
 				state.loading = false;
+				state.conversations = action.payload;
+                state.error = null;
+			})
+			.addCase(getConversations.rejected, (state, action) => {
+				state.loading = false;
+                state.error = action.payload.detail || "An error occurred";
+			})
+			.addCase(getChatHistory.pending, state => {
+				state.historyLoading = true;
+                state.error = null;
+			})
+			.addCase(getChatHistory.fulfilled, (state, action) => {
+				state.historyLoading = false;
 				state.chatHistory = action.payload;
                 state.error = null;
 			})
 			.addCase(getChatHistory.rejected, (state, action) => {
-				state.loading = false;
+				state.historyLoading = false;
                 state.error = action.payload.detail || "An error occurred";
 			});
 	},
 });
 
-export const { resetRegistered, appendChatMessage } = userSlice.actions;
+export const { resetRegistered, receiveLiveMessage, markConversationRead } = userSlice.actions;
 export default userSlice.reducer;

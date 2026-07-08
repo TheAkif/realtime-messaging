@@ -1,0 +1,194 @@
+/*
+ * Design tokens for the RealTime chat redesign - "graphite & sage".
+ * Source: design_handoff_realtime_chat/README.md.
+ *
+ * Light values live on :root. Dark values are applied under
+ * prefers-color-scheme (guarded so an explicit light choice always wins)
+ * and repeated under [data-theme="dark"] so the in-app toggle always wins
+ * over the OS preference in both directions.
+ */
+
+:root {
+  --rt-font-ui: 'Karla', sans-serif;
+  --rt-font-mono: 'Spline Sans Mono', monospace;
+
+  /* Surfaces */
+  --rt-bg-thread: #FFFFFF;
+  --rt-bg-sidebar: #F5F6F7;
+  --rt-border: #E3E5E8;
+  --rt-row-hover: #EFF0F2;
+  --rt-row-selected: #E6E8EA;
+  --rt-field-bg: #ECEEF0;
+  --rt-field-bg-focus: #FFFFFF;
+  --rt-composer-field-bg: #F5F6F7;
+  --rt-surface-raised: #FFFFFF;
+  --rt-surface-pill: #FFFFFF;
+
+  /* Text */
+  --rt-text-primary: #1C1E20;
+  --rt-text-secondary: #55595E;
+  --rt-text-tertiary: #6D7278;
+  --rt-text-muted: #8B9096;
+
+  /* Bubbles */
+  --rt-bubble-sent-bg: #2C3238;
+  --rt-bubble-sent-text: #F1F2F3;
+  --rt-bubble-received-bg: #EFF0F2;
+  --rt-bubble-received-text: var(--rt-text-primary);
+
+  /* Accent (buttons, unread badge, links, focus, presence) */
+  --rt-accent: #3D6B55;
+  --rt-accent-hover: #2F5443;
+  --rt-accent-fill: #3D6B55;
+  --rt-accent-fill-hover: #2F5443;
+  --rt-accent-muted-text: #3D6B55;
+  --rt-accent-ring: rgba(61, 107, 85, .13);
+  --rt-presence-dot: #45996E;
+
+  /* Avatar tints, cycled across contacts */
+  --rt-avatar-1-bg: #E4E8E6; --rt-avatar-1-fg: #3F584B;
+  --rt-avatar-2-bg: #E2E5E9; --rt-avatar-2-fg: #48555F;
+  --rt-avatar-3-bg: #E5E4E8; --rt-avatar-3-fg: #565060;
+  --rt-avatar-4-bg: #E8E7E2; --rt-avatar-4-fg: #5F5C50;
+
+  /* Deleted / reply */
+  --rt-deleted-border: #C8CBCF;
+  --rt-deleted-text: #8B9096;
+  --rt-reply-fill: rgba(255, 255, 255, .12);
+  --rt-reply-border: #8CA697;
+  --rt-reply-author-text: #A8C6B2;
+
+  /* Connection feedback banners */
+  --rt-banner-warn-bg: #F4F0E4;
+  --rt-banner-warn-border: #DFD6BC;
+  --rt-banner-warn-dot: #A9873F;
+  --rt-banner-warn-text: #6B5D33;
+  --rt-banner-warn-subtext: #847A5B;
+  --rt-banner-ok-bg: #E9EEEA;
+  --rt-banner-ok-border: #CDDAD1;
+  --rt-banner-ok-text: #3F584B;
+  --rt-banner-ok-subtext: #5F7367;
+
+  /* Disabled controls */
+  --rt-disabled-bg: #EFF0F2;
+  --rt-disabled-icon: #8B9096;
+
+  /* Shape */
+  --rt-radius-bubble: 16px;
+  --rt-radius-anchor-tight: 5px;
+  --rt-radius-anchor-loose: 8px;
+  --rt-radius-row-desktop: 12px;
+  --rt-radius-row-mobile: 14px;
+  --rt-radius-field: 14px;
+  --rt-radius-pill: 999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --rt-bg-thread: #171613;
+    --rt-bg-sidebar: #1D1B17;
+    --rt-border: #2B2924;
+    --rt-row-hover: #232119;
+    --rt-row-selected: #2A2820;
+    --rt-field-bg: #26241F;
+    --rt-field-bg-focus: #211F1A;
+    --rt-composer-field-bg: #211F1A;
+    --rt-surface-raised: #211F1A;
+    --rt-surface-pill: #1D1B17;
+
+    --rt-text-primary: #EBE9E2;
+    --rt-text-secondary: #B4AFA4;
+    --rt-text-tertiary: #9A958A;
+    --rt-text-muted: #7C776C;
+
+    --rt-bubble-sent-bg: #2E4A3B;
+    --rt-bubble-sent-text: #E9F0EA;
+    --rt-bubble-received-bg: #26241F;
+
+    --rt-accent: #4FBE85;
+    --rt-accent-hover: #4FBE85;
+    --rt-accent-fill: #3E8E63;
+    --rt-accent-fill-hover: #4FBE85;
+    --rt-accent-muted-text: #58B183;
+    --rt-accent-ring: rgba(79, 190, 133, .15);
+    --rt-presence-dot: #4FBE85;
+
+    --rt-avatar-1-bg: #2C3B31; --rt-avatar-1-fg: #9CC4A8;
+    --rt-avatar-2-bg: #2A343C; --rt-avatar-2-fg: #9FB8CB;
+    --rt-avatar-3-bg: #362E38; --rt-avatar-3-fg: #C4A9C8;
+    --rt-avatar-4-bg: #383225; --rt-avatar-4-fg: #CBB98C;
+
+    --rt-deleted-border: #45423A;
+    --rt-deleted-text: #7C776C;
+    --rt-reply-fill: rgba(255, 255, 255, .1);
+    --rt-reply-border: #6FA283;
+    --rt-reply-author-text: #A8C6B2;
+
+    --rt-banner-warn-bg: #2A2318;
+    --rt-banner-warn-border: #3D3220;
+    --rt-banner-warn-dot: #C9A355;
+    --rt-banner-warn-text: #D9BD82;
+    --rt-banner-warn-subtext: #A6935F;
+    --rt-banner-ok-bg: #1E2A22;
+    --rt-banner-ok-border: #2C3D30;
+    --rt-banner-ok-text: #8FCBA8;
+    --rt-banner-ok-subtext: #6FA283;
+
+    --rt-disabled-bg: #26241F;
+    --rt-disabled-icon: #5A564C;
+  }
+}
+
+:root[data-theme='dark'] {
+  --rt-bg-thread: #171613;
+  --rt-bg-sidebar: #1D1B17;
+  --rt-border: #2B2924;
+  --rt-row-hover: #232119;
+  --rt-row-selected: #2A2820;
+  --rt-field-bg: #26241F;
+  --rt-field-bg-focus: #211F1A;
+  --rt-composer-field-bg: #211F1A;
+  --rt-surface-raised: #211F1A;
+  --rt-surface-pill: #1D1B17;
+
+  --rt-text-primary: #EBE9E2;
+  --rt-text-secondary: #B4AFA4;
+  --rt-text-tertiary: #9A958A;
+  --rt-text-muted: #7C776C;
+
+  --rt-bubble-sent-bg: #2E4A3B;
+  --rt-bubble-sent-text: #E9F0EA;
+  --rt-bubble-received-bg: #26241F;
+
+  --rt-accent: #4FBE85;
+  --rt-accent-hover: #4FBE85;
+  --rt-accent-fill: #3E8E63;
+  --rt-accent-fill-hover: #4FBE85;
+  --rt-accent-muted-text: #58B183;
+  --rt-accent-ring: rgba(79, 190, 133, .15);
+  --rt-presence-dot: #4FBE85;
+
+  --rt-avatar-1-bg: #2C3B31; --rt-avatar-1-fg: #9CC4A8;
+  --rt-avatar-2-bg: #2A343C; --rt-avatar-2-fg: #9FB8CB;
+  --rt-avatar-3-bg: #362E38; --rt-avatar-3-fg: #C4A9C8;
+  --rt-avatar-4-bg: #383225; --rt-avatar-4-fg: #CBB98C;
+
+  --rt-deleted-border: #45423A;
+  --rt-deleted-text: #7C776C;
+  --rt-reply-fill: rgba(255, 255, 255, .1);
+  --rt-reply-border: #6FA283;
+  --rt-reply-author-text: #A8C6B2;
+
+  --rt-banner-warn-bg: #2A2318;
+  --rt-banner-warn-border: #3D3220;
+  --rt-banner-warn-dot: #C9A355;
+  --rt-banner-warn-text: #D9BD82;
+  --rt-banner-warn-subtext: #A6935F;
+  --rt-banner-ok-bg: #1E2A22;
+  --rt-banner-ok-border: #2C3D30;
+  --rt-banner-ok-text: #8FCBA8;
+  --rt-banner-ok-subtext: #6FA283;
+
+  --rt-disabled-bg: #26241F;
+  --rt-disabled-icon: #5A564C;
+}
