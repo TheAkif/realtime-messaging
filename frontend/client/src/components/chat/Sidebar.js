@@ -1,0 +1,94 @@
+import { useRef, useState } from 'react';
+import Avatar from './Avatar';
+import ConversationRow from './ConversationRow';
+import NoConversations from './NoConversations';
+import ThemeToggle from './ThemeToggle';
+
+const Sidebar = ({
+	conversations,
+	activeChatUser,
+	typingFromUserId,
+	onSelect,
+	theme,
+	onToggleTheme,
+	currentUser,
+	onLogout,
+}) => {
+	const [query, setQuery] = useState('');
+	const searchInputRef = useRef(null);
+	const searchInputId = 'rt-search-people';
+
+	const focusSearch = () => searchInputRef.current?.focus();
+
+	const filtered = conversations.filter((c) => {
+		const name = `${c.first_name} ${c.last_name}`.toLowerCase();
+		return name.includes(query.trim().toLowerCase());
+	});
+
+	return (
+		<div className="rt-sidebar">
+			<div className="rt-sidebar-header">
+				<span className="rt-wordmark">
+					RealTime
+					<span className="rt-wordmark-dot" aria-hidden="true" />
+				</span>
+				<span className="rt-sidebar-header-actions">
+					<ThemeToggle theme={theme} onToggle={onToggleTheme} />
+					<button
+						type="button"
+						aria-label="New message"
+						className="rt-icon-btn rt-new-message-btn"
+						onClick={focusSearch}
+					>
+						+
+					</button>
+				</span>
+			</div>
+			<div className="rt-search-wrap">
+				<label htmlFor={searchInputId} className="rt-visually-hidden">
+					Search conversations
+				</label>
+				<input
+					id={searchInputId}
+					ref={searchInputRef}
+					type="search"
+					placeholder="Search people"
+					className="rt-search-input"
+					value={query}
+					onChange={(e) => setQuery(e.target.value)}
+				/>
+			</div>
+			{conversations.length === 0 ? (
+				<NoConversations onNewMessage={focusSearch} />
+			) : (
+				<nav aria-label="Conversations" className="rt-conversation-list">
+					{filtered.map((conversation) => (
+						<ConversationRow
+							key={conversation.id}
+							conversation={conversation}
+							isActive={activeChatUser?.id === conversation.id}
+							isTyping={typingFromUserId === conversation.id}
+							onSelect={onSelect}
+						/>
+					))}
+				</nav>
+			)}
+			<div className="rt-sidebar-footer">
+				<Avatar
+					userId={currentUser.id}
+					firstName={currentUser.first_name}
+					lastName={currentUser.last_name}
+					size="thread"
+				/>
+				<span className="rt-sidebar-footer-name">
+					{currentUser.first_name} {currentUser.last_name}
+				</span>
+				<button type="button" className="rt-sidebar-footer-logout" onClick={onLogout}>
+					Log out
+				</button>
+			</div>
+		</div>
+	);
+};
+
+export default Sidebar;

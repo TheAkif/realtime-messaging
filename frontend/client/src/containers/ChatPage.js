@@ -1,162 +1,256 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import Layout from 'components/Layout';
-import { getAllUsers, getChatHistory, getWsTicket, appendChatMessage } from 'features/user'
+import { Helmet } from 'react-helmet';
+import {
+	getConversations,
+	getChatHistory,
+	getWsTicket,
+	logout,
+	receiveLiveMessage,
+	markConversationRead,
+} from 'features/user';
 import { WS_URL } from 'config';
+import Sidebar from 'components/chat/Sidebar';
+import ChatHeader from 'components/chat/ChatHeader';
+import MessageThread from 'components/chat/MessageThread';
+import Composer from 'components/chat/Composer';
+import ConnectionBanner from 'components/chat/ConnectionBanner';
+import NoConversationSelected from 'components/chat/NoConversationSelected';
+import 'styles/tokens.css';
+import 'styles/chat.css';
+
+const TYPING_SEND_THROTTLE_MS = 2000;
+const TYPING_CLEAR_TIMEOUT_MS = 3000;
+const RECONNECT_DELAY_MS = 2000;
+
+const getInitialTheme = () => {
+	const saved = localStorage.getItem('rt-theme');
+	if (saved === 'light' || saved === 'dark') return saved;
+	return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+		? 'dark'
+		: 'light';
+};
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
-	const { isAuthenticated, user, loading, users, chatHistory } = useSelector(state => ({
-		...state.user,
-		users: state.user.users,
-		chatHistory: state.user.chatHistory,
-	}));
-	const [activeChatUser, setActiveChatUser] = useState(null);
+	const { isAuthenticated, user, loading, historyLoading, conversations, chatHistory } =
+		useSelector(state => state.user);
 
+	const [activeChatUser, setActiveChatUser] = useState(null);
 	const [message, setMessage] = useState('');
-	const [isSendingMessage, setIsSendingMessage] = useState(false);
+	const [theme, setTheme] = useState(getInitialTheme);
+	const [wsStatus, setWsStatus] = useState('disconnected');
+	const [pendingMessages, setPendingMessages] = useState([]);
+	const [justReconnectedCount, setJustReconnectedCount] = useState(0);
+	const [isContactTyping, setIsContactTyping] = useState(false);
 
 	const ws = useRef(null);
-
+	const reconnectTimeoutRef = useRef(null);
+	const typingClearTimeoutRef = useRef(null);
+	const lastTypingSentAtRef = useRef(0);
+	const pendingIdRef = useRef(0);
+	const pendingMessagesRef = useRef([]);
 
 	useEffect(() => {
-		return () => {
-			if (ws.current) {
-				ws.current.close();
-			}
-		};
+		pendingMessagesRef.current = pendingMessages;
+	}, [pendingMessages]);
+
+	useEffect(() => {
+		dispatch(getConversations());
+	}, [dispatch]);
+
+	useEffect(() => {
+		document.documentElement.setAttribute('data-theme', theme);
+		localStorage.setItem('rt-theme', theme);
+	}, [theme]);
+
+	const closeSocket = useCallback(() => {
+		clearTimeout(reconnectTimeoutRef.current);
+		if (ws.current) {
+			ws.current.onclose = null;
+			ws.current.close();
+			ws.current = null;
+		}
 	}, []);
 
+	const connectWebSocket = useCallback(
+		async (contact) => {
+			let ticket;
+			try {
+				ticket = await getWsTicket();
+			} catch (err) {
+				console.error('Could not start chat session:', err);
+				return;
+			}
+
+			const socket = new WebSocket(`${WS_URL}/ws/chat/${contact.chat_uuid}/?ticket=${ticket}`);
+			ws.current = socket;
+
+			socket.onopen = () => {
+				setWsStatus('connected');
+				// Read the queue from a ref, and send as a plain side effect
+				// here rather than inside a setState updater - React 18
+				// StrictMode deliberately invokes functional updaters twice
+				// in dev to catch impurities, which would double-send here.
+				const toFlush = pendingMessagesRef.current;
+				if (toFlush.length > 0) {
+					toFlush.forEach(p => socket.send(JSON.stringify({ message: p.content })));
+					setJustReconnectedCount(toFlush.length);
+					setTimeout(() => setJustReconnectedCount(0), 3000);
+					pendingMessagesRef.current = [];
+					setPendingMessages([]);
+				}
+			};
+
+			socket.onmessage = (e) => {
+				const data = JSON.parse(e.data);
+
+				if (data.type === 'typing') {
+					setIsContactTyping(true);
+					clearTimeout(typingClearTimeoutRef.current);
+					typingClearTimeoutRef.current = setTimeout(
+						() => setIsContactTyping(false),
+						TYPING_CLEAR_TIMEOUT_MS
+					);
+					return;
+				}
+
+				if (data.type === 'message') {
+					setIsContactTyping(false);
+					dispatch(
+						receiveLiveMessage({
+							contactId: contact.id,
+							message: {
+								id: `live-${data.sender}-${data.timestamp}`,
+								sender: data.sender,
+								receiver: data.sender === user.id ? contact.id : user.id,
+								content: data.message,
+								timestamp: data.timestamp,
+								read: false,
+							},
+						})
+					);
+				}
+			};
+
+			socket.onclose = (e) => {
+				if (e.code === 4401 || e.code === 4404) {
+					setWsStatus('disconnected');
+					return;
+				}
+				setWsStatus('reconnecting');
+				reconnectTimeoutRef.current = setTimeout(
+					() => connectWebSocket(contact),
+					RECONNECT_DELAY_MS
+				);
+			};
+		},
+		[dispatch, user]
+	);
+
+	useEffect(() => closeSocket, [closeSocket]);
+
+	if (!isAuthenticated && !loading && user === null) return <Navigate to="/login" />;
+
+	const handleSelectConversation = (conversation) => {
+		closeSocket();
+		setActiveChatUser(conversation);
+		setMessage('');
+		setPendingMessages([]);
+		setIsContactTyping(false);
+		setWsStatus('disconnected');
+		dispatch(getChatHistory(conversation.id));
+		dispatch(markConversationRead(conversation.id));
+		connectWebSocket(conversation);
+	};
+
+	const handleBack = () => {
+		closeSocket();
+		setActiveChatUser(null);
+		dispatch(getConversations());
+	};
+
 	const handleSendMessage = () => {
-		if (ws.current && message) {
-			setIsSendingMessage(true);
-			ws.current.send(JSON.stringify({ message }));
-			setMessage('');
+		const content = message.trim();
+		if (!content) return;
+		setMessage('');
+
+		if (wsStatus === 'connected' && ws.current) {
+			ws.current.send(JSON.stringify({ message: content }));
+		} else {
+			pendingIdRef.current += 1;
+			setPendingMessages(prev => [
+				...prev,
+				{
+					id: `pending-${pendingIdRef.current}`,
+					sender: user.id,
+					receiver: activeChatUser.id,
+					content,
+					timestamp: new Date().toISOString(),
+					pending: true,
+				},
+			]);
 		}
 	};
 
-	useEffect(() => {
-		dispatch(getAllUsers());
-	}, [dispatch]);
-
-	if (!isAuthenticated && !loading && user === null)
-		return <Navigate to='/login' />;
-
-	const handleUserClick = async (chatUser) => {
-		setActiveChatUser(chatUser);
-		dispatch(getChatHistory(chatUser.id));
-
-		if (ws.current) {
-			ws.current.close();
+	const handleTyping = () => {
+		if (wsStatus !== 'connected' || !ws.current) return;
+		const now = Date.now();
+		if (now - lastTypingSentAtRef.current > TYPING_SEND_THROTTLE_MS) {
+			lastTypingSentAtRef.current = now;
+			ws.current.send(JSON.stringify({ type: 'typing' }));
 		}
+	};
 
-		let ticket;
-		try {
-			ticket = await getWsTicket();
-		} catch (err) {
-			console.error('Could not start chat session:', err);
-			return;
-		}
-
-		// Initialize WebSocket connection
-		ws.current = new WebSocket(`${WS_URL}/ws/chat/${chatUser.chat_uuid}/?ticket=${ticket}`);
-		ws.current.onopen = () => console.log('WebSocket connected');
-		ws.current.onmessage = e => {
-			const data = JSON.parse(e.data);
-			dispatch(appendChatMessage({
-				sender: data.sender,
-				content: data.message,
-				timestamp: data.timestamp,
-			}));
-			setIsSendingMessage(false);
-		};
-		ws.current.onerror = error => console.error('WebSocket error:', error);
-		ws.current.onclose = e => console.log('WebSocket disconnected', e.code);
+	const handleLogout = () => {
+		closeSocket();
+		dispatch(logout());
 	};
 
 	return (
-		<Layout title='Realtime messaging | Chat' content='Chat page'>
-			{loading ? (
-				<div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
-					<div className='spinner-border text-primary' role='status'>
-						<span className='visually-hidden'>Loading...</span>
+		<>
+			<Helmet>
+				<title>Realtime messaging | Chat</title>
+				<meta name="description" content="Chat page" />
+			</Helmet>
+			<div className="rt-app" data-mobile-view={activeChatUser ? 'thread' : 'list'}>
+				<Sidebar
+					conversations={conversations}
+					activeChatUser={activeChatUser}
+					typingFromUserId={isContactTyping ? activeChatUser?.id : null}
+					onSelect={handleSelectConversation}
+					theme={theme}
+					onToggleTheme={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+					currentUser={user || {}}
+					onLogout={handleLogout}
+				/>
+				{activeChatUser ? (
+					<div className="rt-thread-pane" style={{ position: 'relative' }}>
+						<ConnectionBanner status={wsStatus} justReconnectedCount={justReconnectedCount} />
+						<ChatHeader contact={activeChatUser} onBack={handleBack} />
+						<MessageThread
+							messages={chatHistory || []}
+							pendingMessages={pendingMessages}
+							loading={historyLoading}
+							myUserId={user?.id}
+							contact={activeChatUser}
+							isContactTyping={isContactTyping}
+						/>
+						<Composer
+							contact={activeChatUser}
+							value={message}
+							onChange={setMessage}
+							onSend={handleSendMessage}
+							onTyping={handleTyping}
+						/>
 					</div>
-				</div>
-			) : (
-				<div className='container py-4'>
-					<div className='row no-gutters' style={{ height: '80vh' }}>
-						{/* User List Sidebar */}
-						<div className='col-md-4 col-lg-3 bg-light border-right'>
-							<div className='list-group list-group-flush'>
-								{users.filter(chatUser => user && chatUser.id !== user.id) // Filter out the current user
-									.map((chatUser) => (
-										<button
-											key={chatUser.id}
-											type='button'
-											className={`list-group-item list-group-item-action ${activeChatUser?.id === chatUser.id ? 'active' : ''}`}
-											onClick={() => handleUserClick(chatUser)}
-										>
-											{chatUser.first_name} {chatUser.last_name}
-										</button>
-									))}
-							</div>
-						</div>
-						{/* Chat Area */}
-						<div className='col-md-8 col-lg-9'>
-							<div className='chat-header p-3 border-bottom'>
-								<strong>{activeChatUser ? `${activeChatUser.first_name} ${activeChatUser.last_name}` : 'Chat'}</strong>
-							</div>
-							<div className='chat-messages p-3 overflow-auto' style={{ maxHeight: '70%' }}>
-								{activeChatUser ? (
-									chatHistory.length > 0 ? (
-										chatHistory.map((message, index) => (
-											<div key={index} className={`message mb-3 d-flex flex-column ${message.sender === user.id ? 'align-items-end' : 'align-items-start'}`}>
-												<div className={`d-inline-block p-2 rounded ${message.sender === user.id ? 'bg-primary text-white' : 'bg-light'}`}>
-													{message.content}
-												</div>
-												<div className='text-muted small mt-1' style={{ fontSize: '0.75rem' }}>
-													{new Date(message.timestamp).toLocaleDateString()} {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-												</div>
-											</div>
-										))
-									) : (
-										<div className='text-center text-muted'>
-											<p>No messages yet. Start the conversation!</p>
-										</div>
-									)
-								) : (
-									<p className='text-center my-auto'>Select a user to start chatting</p>
-								)}
-							</div>
-							{activeChatUser && (
-								<div className='chat-input p-3 border-top'>
-									<input
-										className='form-control'
-										type='text'
-										placeholder='Type a message...'
-										value={message}
-										onChange={e => setMessage(e.target.value)}
-										disabled={isSendingMessage}
-									/>
-									<button
-										className='btn btn-primary mt-2 float-right'
-										onClick={handleSendMessage}
-										disabled={isSendingMessage}
-									>
-										Send
-									</button>
-									{isSendingMessage && <div className="loader">Sending...</div>}
-								</div>
-							)}
-						</div>
-
-					</div>
-				</div>
-			)}
-		</Layout>
+				) : (
+					<NoConversationSelected />
+				)}
+			</div>
+		</>
 	);
-
 };
 
 export default ChatPage;
