@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 
 from rest_framework import viewsets, status
@@ -52,6 +53,18 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         return super().get_queryset()
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        target_user_id = self.kwargs.get("target_user_id")
+        if target_user_id:
+            # Viewing this conversation marks the other party's messages read.
+            # (Doesn't push a live WS update to the sender yet - they'll see
+            # the updated status next time their client re-fetches.)
+            Message.objects.filter(
+                sender_id=target_user_id, receiver=request.user, read=False
+            ).update(read=True)
+        return response
+
 
 
 class RegisterViewSet(APIView):
@@ -85,6 +98,61 @@ class RetrieveUserViewSet(APIView):
         user = request.user
         user = UserReadOnlySerializer(user)
         return Response(user.data, status=status.HTTP_200_OK)
+
+
+class ConversationListView(APIView):
+    """
+    Every other user, enriched with their last message (if any) and how many
+    of their messages to the requester are unread - what the sidebar needs.
+    Most-recent-activity first; contacts with no message history are listed
+    afterwards, alphabetically.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        contacts = User.objects.exclude(is_staff=True).exclude(id=user.id)
+
+        conversations = []
+        for contact in contacts:
+            last_message = (
+                Message.objects.filter(
+                    Q(sender=user, receiver=contact) | Q(sender=contact, receiver=user)
+                )
+                .order_by("-timestamp")
+                .first()
+            )
+            unread_count = Message.objects.filter(
+                sender=contact, receiver=user, read=False
+            ).count()
+            conversations.append(
+                {
+                    "id": contact.id,
+                    "first_name": contact.first_name,
+                    "last_name": contact.last_name,
+                    "chat_uuid": contact.chat_uuid,
+                    "last_message": (
+                        {
+                            "content": last_message.content,
+                            "timestamp": last_message.timestamp,
+                            "sender": last_message.sender_id,
+                        }
+                        if last_message
+                        else None
+                    ),
+                    "unread_count": unread_count,
+                }
+            )
+
+        conversations.sort(
+            key=lambda c: (
+                0 if c["last_message"] else 1,
+                -c["last_message"]["timestamp"].timestamp() if c["last_message"] else 0,
+                c["first_name"],
+            )
+        )
+        return Response(conversations, status=status.HTTP_200_OK)
 
 
 class WSTicketView(APIView):

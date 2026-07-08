@@ -6,6 +6,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 import json
 
+from messaging.rooms import room_name_for
 from messaging.ws_tickets import consume_ticket
 
 logger = logging.getLogger(__name__)
@@ -41,8 +42,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Canonical, order-independent room shared by both participants,
         # regardless of which of them "other_user_uuid" refers to.
-        pair = sorted([str(self.user.chat_uuid), str(self.other_user.chat_uuid)])
-        self.room_name = f"chat__{pair[0]}__{pair[1]}"
+        self.room_name = room_name_for(self.user.chat_uuid, self.other_user.chat_uuid)
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
@@ -70,6 +70,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"error": "Invalid message format."}))
             return
 
+        if text_data_json.get("type") == "typing":
+            await self.channel_layer.group_send(
+                self.room_name,
+                {"type": "user_typing", "sender": self.user.id},
+            )
+            return
+
         message = text_data_json.get("message")
         if not message:
             return
@@ -90,11 +97,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(
             text_data=json.dumps(
                 {
+                    "type": "message",
                     "message": event["message"],
                     "sender": event["sender"],
                     "timestamp": event["timestamp"],
                 }
             )
+        )
+
+    async def user_typing(self, event):
+        # Don't echo typing notifications back to the sender's own connection.
+        if event["sender"] == self.user.id:
+            return
+        await self.send(
+            text_data=json.dumps({"type": "typing", "sender": event["sender"]})
         )
 
     @database_sync_to_async
