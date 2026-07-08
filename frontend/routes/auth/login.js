@@ -29,14 +29,14 @@ router.post('/api/users/login', async (req, res) => {
 					maxAge: 60 * 30,
 					path: '/api/',
 					sameSite: 'strict',
-					secure: process.env.NODE_ENV === 'production',
+					secure: req.secure,
 				}),
 				cookie.serialize('refresh', data.refresh, {
 					httpOnly: true,
 					maxAge: 60 * 60 * 24,
 					path: '/api/',
 					sameSite: 'strict',
-					secure: process.env.NODE_ENV === 'production',
+					secure: req.secure,
 				}),
 			]);
 

@@ -2,9 +2,8 @@ module.exports = {
     apps: [
       {
         name: 'DjangoBackend',
-        script: './start_django.sh',
-        interpreter: 'none',
-        cwd: './backend/',
+        script: './start_backend.sh',
+        interpreter: 'bash',
         watch: true,
         autorestart: false,
         exec_mode: 'fork',
@@ -12,10 +11,6 @@ module.exports = {
         env: {
           DJANGO_SETTINGS_MODULE: 'realtime_messaging_project.settings',
         },
-        before_start: [
-          'pipenv run python3 manage.py migrate',
-          'pipenv run python3 manage.py collectstatic --noinput'
-        ]
       },
       {
         name: 'ExpressFrontend',
