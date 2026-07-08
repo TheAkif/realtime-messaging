@@ -1,5 +1,12 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
+const firstFieldError = payload => {
+	if (!payload) return 'An error occurred';
+	if (payload.non_field_errors) return payload.non_field_errors[0];
+	const [firstValue] = Object.values(payload);
+	return Array.isArray(firstValue) ? firstValue[0] : firstValue || 'An error occurred';
+};
+
 export const register = createAsyncThunk(
 	'users/register',
 	async ({ first_name, last_name, email, password }, thunkAPI) => {
@@ -281,7 +288,7 @@ const userSlice = createSlice({
 			})
 			.addCase(register.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.non_field_errors || "An error occurred";
+                state.error = firstFieldError(action.payload);
 			})
 			.addCase(login.pending, state => {
 				state.loading = true;
