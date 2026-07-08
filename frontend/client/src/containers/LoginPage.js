@@ -3,16 +3,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { resetRegistered, login } from 'features/user';
+import { getInitialTheme } from 'utils/theme';
 import 'styles/tokens.css';
 import 'styles/auth.css';
-
-const getInitialTheme = () => {
-	const saved = localStorage.getItem('rt-theme');
-	if (saved === 'light' || saved === 'dark') return saved;
-	return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-		? 'dark'
-		: 'light';
-};
 
 const LoginPage = () => {
 	const dispatch = useDispatch();

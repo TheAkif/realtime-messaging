@@ -17,20 +17,13 @@ import MessageThread from 'components/chat/MessageThread';
 import Composer from 'components/chat/Composer';
 import ConnectionBanner from 'components/chat/ConnectionBanner';
 import NoConversationSelected from 'components/chat/NoConversationSelected';
+import { getInitialTheme } from 'utils/theme';
 import 'styles/tokens.css';
 import 'styles/chat.css';
 
 const TYPING_SEND_THROTTLE_MS = 2000;
 const TYPING_CLEAR_TIMEOUT_MS = 3000;
 const RECONNECT_DELAY_MS = 2000;
-
-const getInitialTheme = () => {
-	const saved = localStorage.getItem('rt-theme');
-	if (saved === 'light' || saved === 'dark') return saved;
-	return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-		? 'dark'
-		: 'light';
-};
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
