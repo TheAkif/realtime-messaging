@@ -73,6 +73,17 @@
   --rt-disabled-bg: #EFF0F2;
   --rt-disabled-icon: #8B9096;
 
+  /* Auth screens (login/register/home) */
+  --rt-auth-page-bg: #F5F6F7;
+  --rt-auth-card-bg: #FFFFFF;
+  --rt-auth-card-shadow: 0 1px 3px rgba(28, 30, 32, .05);
+  --rt-auth-btn-secondary-bg: #FFFFFF;
+  --rt-auth-btn-secondary-bg-hover: #F5F6F7;
+  --rt-auth-tab-active-bg: #FFFFFF;
+  --rt-error-bg: #FBEAE9;
+  --rt-error-border: #F0C9C6;
+  --rt-error-text: #B3261E;
+
   /* Shape */
   --rt-radius-bubble: 16px;
   --rt-radius-anchor-tight: 5px;
@@ -136,6 +147,16 @@
 
     --rt-disabled-bg: #26241F;
     --rt-disabled-icon: #5A564C;
+
+    --rt-auth-page-bg: #171613;
+    --rt-auth-card-bg: #1D1B17;
+    --rt-auth-card-shadow: none;
+    --rt-auth-btn-secondary-bg: #211F1A;
+    --rt-auth-btn-secondary-bg-hover: #26241F;
+    --rt-auth-tab-active-bg: #33302A;
+    --rt-error-bg: #2E1E1C;
+    --rt-error-border: #4A2C29;
+    --rt-error-text: #F2A9A5;
   }
 }
 
@@ -191,4 +212,14 @@
 
   --rt-disabled-bg: #26241F;
   --rt-disabled-icon: #5A564C;
+
+  --rt-auth-page-bg: #171613;
+  --rt-auth-card-bg: #1D1B17;
+  --rt-auth-card-shadow: none;
+  --rt-auth-btn-secondary-bg: #211F1A;
+  --rt-auth-btn-secondary-bg-hover: #26241F;
+  --rt-auth-tab-active-bg: #33302A;
+  --rt-error-bg: #2E1E1C;
+  --rt-error-border: #4A2C29;
+  --rt-error-text: #F2A9A5;
 }
