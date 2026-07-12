@@ -71,6 +71,15 @@ const ChatPage = () => {
 		}
 	}, []);
 
+	const showSocketError = useCallback((msg) => {
+		clearTimeout(socketErrorTimeoutRef.current);
+		setSocketErrorMessage(msg);
+		socketErrorTimeoutRef.current = setTimeout(
+			() => setSocketErrorMessage(null),
+			SOCKET_ERROR_DISPLAY_MS
+		);
+	}, []);
+
 	const connectWebSocket = useCallback(
 		async (contact) => {
 			let ticket;
@@ -78,6 +87,7 @@ const ChatPage = () => {
 				ticket = await getWsTicket();
 			} catch (err) {
 				console.error('Could not start chat session:', err);
+				showSocketError('Could not start chat session. Try selecting the conversation again.');
 				return;
 			}
 
@@ -104,12 +114,7 @@ const ChatPage = () => {
 				const data = JSON.parse(e.data);
 
 				if (data.error) {
-					clearTimeout(socketErrorTimeoutRef.current);
-					setSocketErrorMessage(data.error);
-					socketErrorTimeoutRef.current = setTimeout(
-						() => setSocketErrorMessage(null),
-						SOCKET_ERROR_DISPLAY_MS
-					);
+					showSocketError(data.error);
 					return;
 				}
 
@@ -153,7 +158,7 @@ const ChatPage = () => {
 				);
 			};
 		},
-		[dispatch, user]
+		[dispatch, user, showSocketError]
 	);
 
 	useEffect(() => closeSocket, [closeSocket]);
