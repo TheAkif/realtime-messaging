@@ -1,6 +1,6 @@
-/* RealTime chat UI - "graphite & sage". Built defensively against
+/* Rabt chat UI - navy & coral (see tokens.css). Built defensively against
    Bootstrap's global resets (explicit box-sizing, no reliance on Bootstrap
-   classes) since both stylesheets are loaded together. */
+   classes) since both stylesheets were loaded together historically. */
 
 .rt-app,
 .rt-app *,
@@ -63,24 +63,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 18px 14px;
-}
-
-.rt-wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: var(--rt-text-primary);
-}
-
-.rt-wordmark-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--rt-presence-dot);
-  display: inline-block;
 }
 
 .rt-icon-btn {
@@ -860,17 +842,6 @@
 
 .rt-empty-cta:hover {
   background: var(--rt-accent-fill-hover);
-}
-
-.rt-empty-wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  margin-bottom: 4px;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: var(--rt-text-secondary);
 }
 
 .rt-skeleton-log {

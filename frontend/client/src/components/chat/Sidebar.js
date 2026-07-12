@@ -3,6 +3,7 @@ import Avatar from './Avatar';
 import ConversationRow from './ConversationRow';
 import NoConversations from './NoConversations';
 import ThemeToggle from './ThemeToggle';
+import RabtWordmark from 'components/RabtWordmark';
 
 const Sidebar = ({
 	conversations,
@@ -28,10 +29,7 @@ const Sidebar = ({
 	return (
 		<div className="rt-sidebar">
 			<div className="rt-sidebar-header">
-				<span className="rt-wordmark">
-					Rabt
-					<span className="rt-wordmark-dot" aria-hidden="true" />
-				</span>
+				<RabtWordmark />
 				<span className="rt-sidebar-header-actions">
 					<ThemeToggle theme={theme} onToggle={onToggleTheme} />
 					<button

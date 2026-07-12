@@ -1,225 +1,198 @@
 /*
- * Design tokens for the RealTime chat redesign - "graphite & sage".
- * Source: design_handoff_realtime_chat/README.md.
- *
- * Light values live on :root. Dark values are applied under
- * prefers-color-scheme (guarded so an explicit light choice always wins)
- * and repeated under [data-theme="dark"] so the in-app toggle always wins
- * over the OS preference in both directions.
+ * Design tokens for the chat UI - navy & coral (same system as
+ * rb-tokens.css, kept as a separate file/prefix since chat.css and every
+ * chat component already reference these exact --rt-* names; repainting
+ * values here means zero changes needed in chat.css itself).
  */
 
 :root {
-  --rt-font-ui: 'Karla', sans-serif;
-  --rt-font-mono: 'Spline Sans Mono', monospace;
+  --rt-font-ui: 'Work Sans', -apple-system, 'Segoe UI', sans-serif;
+  --rt-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   /* Surfaces */
   --rt-bg-thread: #FFFFFF;
-  --rt-bg-sidebar: #F5F6F7;
-  --rt-border: #E3E5E8;
-  --rt-row-hover: #EFF0F2;
-  --rt-row-selected: #E6E8EA;
-  --rt-field-bg: #ECEEF0;
+  --rt-bg-sidebar: #F1F2F4;
+  --rt-border: #E2E3E8;
+  --rt-row-hover: #E8E9EC;
+  --rt-row-selected: #DEE0E4;
+  --rt-field-bg: #EEEFF2;
   --rt-field-bg-focus: #FFFFFF;
-  --rt-composer-field-bg: #F5F6F7;
+  --rt-composer-field-bg: #F1F2F4;
   --rt-surface-raised: #FFFFFF;
   --rt-surface-pill: #FFFFFF;
 
   /* Text */
-  --rt-text-primary: #1C1E20;
-  --rt-text-secondary: #55595E;
-  --rt-text-tertiary: #6D7278;
-  --rt-text-muted: #8B9096;
+  --rt-text-primary: #12141C;
+  --rt-text-secondary: #494D59;
+  --rt-text-tertiary: #6E7280;
+  --rt-text-muted: #9498A3;
 
   /* Bubbles */
-  --rt-bubble-sent-bg: #2C3238;
-  --rt-bubble-sent-text: #F1F2F3;
-  --rt-bubble-received-bg: #EFF0F2;
+  --rt-bubble-sent-bg: #12141C;
+  --rt-bubble-sent-text: #F1F1EF;
+  --rt-bubble-received-bg: #F1F2F4;
   --rt-bubble-received-text: var(--rt-text-primary);
 
-  /* Accent (buttons, unread badge, links, focus, presence) */
-  --rt-accent: #3D6B55;
-  --rt-accent-hover: #2F5443;
-  --rt-accent-fill: #3D6B55;
-  --rt-accent-fill-hover: #2F5443;
-  --rt-accent-muted-text: #3D6B55;
-  --rt-accent-ring: rgba(61, 107, 85, .13);
-  --rt-presence-dot: #45996E;
+  /* Accent (buttons, unread badge, links, focus) */
+  --rt-accent: #E8482C;
+  --rt-accent-hover: #C93A21;
+  --rt-accent-fill: #E8482C;
+  --rt-accent-fill-hover: #C93A21;
+  --rt-accent-muted-text: #E8482C;
+  --rt-accent-ring: rgba(232, 72, 44, .16);
 
-  /* Avatar tints, cycled across contacts */
-  --rt-avatar-1-bg: #E4E8E6; --rt-avatar-1-fg: #3F584B;
-  --rt-avatar-2-bg: #E2E5E9; --rt-avatar-2-fg: #48555F;
-  --rt-avatar-3-bg: #E5E4E8; --rt-avatar-3-fg: #565060;
-  --rt-avatar-4-bg: #E8E7E2; --rt-avatar-4-fg: #5F5C50;
+  /* Presence is a universal green regardless of brand accent (Slack,
+     Discord, Teams all do this) - unused until online-status ships, but
+     kept distinct from --rt-accent on purpose. */
+  --rt-presence-dot: #22C55E;
+
+  /* Avatar tints, cycled across contacts - four desaturated hue-leans on
+     the navy-neutral system (coral/blue/violet/amber), same structure as
+     before, recolored off the old sage-green system. */
+  --rt-avatar-1-bg: #F3E7E3; --rt-avatar-1-fg: #7A4636;
+  --rt-avatar-2-bg: #E3E7ED; --rt-avatar-2-fg: #3E4F63;
+  --rt-avatar-3-bg: #E9E5ED; --rt-avatar-3-fg: #5A4B66;
+  --rt-avatar-4-bg: #EDE8E0; --rt-avatar-4-fg: #6B5A3C;
 
   /* Deleted / reply */
-  --rt-deleted-border: #C8CBCF;
-  --rt-deleted-text: #8B9096;
-  --rt-reply-fill: rgba(255, 255, 255, .12);
-  --rt-reply-border: #8CA697;
-  --rt-reply-author-text: #A8C6B2;
+  --rt-deleted-border: #D5D7DC;
+  --rt-deleted-text: #9498A3;
+  --rt-reply-fill: rgba(18, 20, 28, .06);
+  --rt-reply-border: #D98A73;
+  --rt-reply-author-text: #B25336;
 
-  /* Connection feedback banners */
-  --rt-banner-warn-bg: #F4F0E4;
-  --rt-banner-warn-border: #DFD6BC;
-  --rt-banner-warn-dot: #A9873F;
-  --rt-banner-warn-text: #6B5D33;
-  --rt-banner-warn-subtext: #847A5B;
-  --rt-banner-ok-bg: #E9EEEA;
-  --rt-banner-ok-border: #CDDAD1;
-  --rt-banner-ok-text: #3F584B;
-  --rt-banner-ok-subtext: #5F7367;
+  /* Connection feedback banners - semantic warn/ok colors, deliberately
+     not brand-coral so they don't read as "primary action". */
+  --rt-banner-warn-bg: #FBF3E4;
+  --rt-banner-warn-border: #EDDCB0;
+  --rt-banner-warn-dot: #C9A03F;
+  --rt-banner-warn-text: #7A5F26;
+  --rt-banner-warn-subtext: #94805A;
+  --rt-banner-ok-bg: #E8F5EC;
+  --rt-banner-ok-border: #C3E5CE;
+  --rt-banner-ok-text: #1F8A4C;
+  --rt-banner-ok-subtext: #4F9268;
 
   /* Disabled controls */
-  --rt-disabled-bg: #EFF0F2;
-  --rt-disabled-icon: #8B9096;
-
-  /* Auth screens (login/register/home) */
-  --rt-auth-page-bg: #F5F6F7;
-  --rt-auth-card-bg: #FFFFFF;
-  --rt-auth-card-shadow: 0 1px 3px rgba(28, 30, 32, .05);
-  --rt-auth-btn-secondary-bg: #FFFFFF;
-  --rt-auth-btn-secondary-bg-hover: #F5F6F7;
-  --rt-auth-tab-active-bg: #FFFFFF;
-  --rt-error-bg: #FBEAE9;
-  --rt-error-border: #F0C9C6;
-  --rt-error-text: #B3261E;
+  --rt-disabled-bg: #EEEFF2;
+  --rt-disabled-icon: #9498A3;
 
   /* Shape */
   --rt-radius-bubble: 16px;
   --rt-radius-anchor-tight: 5px;
   --rt-radius-anchor-loose: 8px;
-  --rt-radius-row-desktop: 12px;
-  --rt-radius-row-mobile: 14px;
-  --rt-radius-field: 14px;
+  --rt-radius-row-desktop: 10px;
+  --rt-radius-row-mobile: 12px;
+  --rt-radius-field: 10px;
   --rt-radius-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --rt-bg-thread: #171613;
-    --rt-bg-sidebar: #1D1B17;
-    --rt-border: #2B2924;
-    --rt-row-hover: #232119;
-    --rt-row-selected: #2A2820;
-    --rt-field-bg: #26241F;
-    --rt-field-bg-focus: #211F1A;
-    --rt-composer-field-bg: #211F1A;
-    --rt-surface-raised: #211F1A;
-    --rt-surface-pill: #1D1B17;
+    --rt-bg-thread: #0F1117;
+    --rt-bg-sidebar: #171923;
+    --rt-border: #262A36;
+    --rt-row-hover: #1C1F2A;
+    --rt-row-selected: #232733;
+    --rt-field-bg: #1C1F2A;
+    --rt-field-bg-focus: #20222E;
+    --rt-composer-field-bg: #171923;
+    --rt-surface-raised: #171923;
+    --rt-surface-pill: #171923;
 
-    --rt-text-primary: #EBE9E2;
-    --rt-text-secondary: #B4AFA4;
-    --rt-text-tertiary: #9A958A;
-    --rt-text-muted: #7C776C;
+    --rt-text-primary: #F1F1EF;
+    --rt-text-secondary: #B7BAC4;
+    --rt-text-tertiary: #8B8F9C;
+    --rt-text-muted: #676B78;
 
-    --rt-bubble-sent-bg: #2E4A3B;
-    --rt-bubble-sent-text: #E9F0EA;
-    --rt-bubble-received-bg: #26241F;
+    --rt-bubble-sent-bg: #F1F1EF;
+    --rt-bubble-sent-text: #12141C;
+    --rt-bubble-received-bg: #1C1F2A;
 
-    --rt-accent: #4FBE85;
-    --rt-accent-hover: #4FBE85;
-    --rt-accent-fill: #3E8E63;
-    --rt-accent-fill-hover: #4FBE85;
-    --rt-accent-muted-text: #58B183;
-    --rt-accent-ring: rgba(79, 190, 133, .15);
-    --rt-presence-dot: #4FBE85;
+    --rt-accent: #FF6A45;
+    --rt-accent-hover: #FF8563;
+    --rt-accent-fill: #FF6A45;
+    --rt-accent-fill-hover: #FF8563;
+    --rt-accent-muted-text: #FF6A45;
+    --rt-accent-ring: rgba(255, 106, 69, .18);
+    --rt-presence-dot: #4ADE80;
 
-    --rt-avatar-1-bg: #2C3B31; --rt-avatar-1-fg: #9CC4A8;
-    --rt-avatar-2-bg: #2A343C; --rt-avatar-2-fg: #9FB8CB;
-    --rt-avatar-3-bg: #362E38; --rt-avatar-3-fg: #C4A9C8;
-    --rt-avatar-4-bg: #383225; --rt-avatar-4-fg: #CBB98C;
+    --rt-avatar-1-bg: #362A24; --rt-avatar-1-fg: #E3B29E;
+    --rt-avatar-2-bg: #232B36; --rt-avatar-2-fg: #9BB4CC;
+    --rt-avatar-3-bg: #2C2733; --rt-avatar-3-fg: #C7B2D1;
+    --rt-avatar-4-bg: #322C1F; --rt-avatar-4-fg: #D6C295;
 
-    --rt-deleted-border: #45423A;
-    --rt-deleted-text: #7C776C;
-    --rt-reply-fill: rgba(255, 255, 255, .1);
-    --rt-reply-border: #6FA283;
-    --rt-reply-author-text: #A8C6B2;
+    --rt-deleted-border: #3A3E4A;
+    --rt-deleted-text: #676B78;
+    --rt-reply-fill: rgba(255, 255, 255, .08);
+    --rt-reply-border: #B25336;
+    --rt-reply-author-text: #E3937A;
 
-    --rt-banner-warn-bg: #2A2318;
-    --rt-banner-warn-border: #3D3220;
-    --rt-banner-warn-dot: #C9A355;
-    --rt-banner-warn-text: #D9BD82;
-    --rt-banner-warn-subtext: #A6935F;
-    --rt-banner-ok-bg: #1E2A22;
-    --rt-banner-ok-border: #2C3D30;
-    --rt-banner-ok-text: #8FCBA8;
-    --rt-banner-ok-subtext: #6FA283;
+    --rt-banner-warn-bg: #241D12;
+    --rt-banner-warn-border: #3D311C;
+    --rt-banner-warn-dot: #D9AD52;
+    --rt-banner-warn-text: #E0C077;
+    --rt-banner-warn-subtext: #A88E5C;
+    --rt-banner-ok-bg: #142A1C;
+    --rt-banner-ok-border: #1F3D2A;
+    --rt-banner-ok-text: #5FCB8A;
+    --rt-banner-ok-subtext: #4A9268;
 
-    --rt-disabled-bg: #26241F;
-    --rt-disabled-icon: #5A564C;
-
-    --rt-auth-page-bg: #171613;
-    --rt-auth-card-bg: #1D1B17;
-    --rt-auth-card-shadow: none;
-    --rt-auth-btn-secondary-bg: #211F1A;
-    --rt-auth-btn-secondary-bg-hover: #26241F;
-    --rt-auth-tab-active-bg: #33302A;
-    --rt-error-bg: #2E1E1C;
-    --rt-error-border: #4A2C29;
-    --rt-error-text: #F2A9A5;
+    --rt-disabled-bg: #1C1F2A;
+    --rt-disabled-icon: #676B78;
   }
 }
 
 :root[data-theme='dark'] {
-  --rt-bg-thread: #171613;
-  --rt-bg-sidebar: #1D1B17;
-  --rt-border: #2B2924;
-  --rt-row-hover: #232119;
-  --rt-row-selected: #2A2820;
-  --rt-field-bg: #26241F;
-  --rt-field-bg-focus: #211F1A;
-  --rt-composer-field-bg: #211F1A;
-  --rt-surface-raised: #211F1A;
-  --rt-surface-pill: #1D1B17;
+  --rt-bg-thread: #0F1117;
+  --rt-bg-sidebar: #171923;
+  --rt-border: #262A36;
+  --rt-row-hover: #1C1F2A;
+  --rt-row-selected: #232733;
+  --rt-field-bg: #1C1F2A;
+  --rt-field-bg-focus: #20222E;
+  --rt-composer-field-bg: #171923;
+  --rt-surface-raised: #171923;
+  --rt-surface-pill: #171923;
 
-  --rt-text-primary: #EBE9E2;
-  --rt-text-secondary: #B4AFA4;
-  --rt-text-tertiary: #9A958A;
-  --rt-text-muted: #7C776C;
+  --rt-text-primary: #F1F1EF;
+  --rt-text-secondary: #B7BAC4;
+  --rt-text-tertiary: #8B8F9C;
+  --rt-text-muted: #676B78;
 
-  --rt-bubble-sent-bg: #2E4A3B;
-  --rt-bubble-sent-text: #E9F0EA;
-  --rt-bubble-received-bg: #26241F;
+  --rt-bubble-sent-bg: #F1F1EF;
+  --rt-bubble-sent-text: #12141C;
+  --rt-bubble-received-bg: #1C1F2A;
 
-  --rt-accent: #4FBE85;
-  --rt-accent-hover: #4FBE85;
-  --rt-accent-fill: #3E8E63;
-  --rt-accent-fill-hover: #4FBE85;
-  --rt-accent-muted-text: #58B183;
-  --rt-accent-ring: rgba(79, 190, 133, .15);
-  --rt-presence-dot: #4FBE85;
+  --rt-accent: #FF6A45;
+  --rt-accent-hover: #FF8563;
+  --rt-accent-fill: #FF6A45;
+  --rt-accent-fill-hover: #FF8563;
+  --rt-accent-muted-text: #FF6A45;
+  --rt-accent-ring: rgba(255, 106, 69, .18);
+  --rt-presence-dot: #4ADE80;
 
-  --rt-avatar-1-bg: #2C3B31; --rt-avatar-1-fg: #9CC4A8;
-  --rt-avatar-2-bg: #2A343C; --rt-avatar-2-fg: #9FB8CB;
-  --rt-avatar-3-bg: #362E38; --rt-avatar-3-fg: #C4A9C8;
-  --rt-avatar-4-bg: #383225; --rt-avatar-4-fg: #CBB98C;
+  --rt-avatar-1-bg: #362A24; --rt-avatar-1-fg: #E3B29E;
+  --rt-avatar-2-bg: #232B36; --rt-avatar-2-fg: #9BB4CC;
+  --rt-avatar-3-bg: #2C2733; --rt-avatar-3-fg: #C7B2D1;
+  --rt-avatar-4-bg: #322C1F; --rt-avatar-4-fg: #D6C295;
 
-  --rt-deleted-border: #45423A;
-  --rt-deleted-text: #7C776C;
-  --rt-reply-fill: rgba(255, 255, 255, .1);
-  --rt-reply-border: #6FA283;
-  --rt-reply-author-text: #A8C6B2;
+  --rt-deleted-border: #3A3E4A;
+  --rt-deleted-text: #676B78;
+  --rt-reply-fill: rgba(255, 255, 255, .08);
+  --rt-reply-border: #B25336;
+  --rt-reply-author-text: #E3937A;
 
-  --rt-banner-warn-bg: #2A2318;
-  --rt-banner-warn-border: #3D3220;
-  --rt-banner-warn-dot: #C9A355;
-  --rt-banner-warn-text: #D9BD82;
-  --rt-banner-warn-subtext: #A6935F;
-  --rt-banner-ok-bg: #1E2A22;
-  --rt-banner-ok-border: #2C3D30;
-  --rt-banner-ok-text: #8FCBA8;
-  --rt-banner-ok-subtext: #6FA283;
+  --rt-banner-warn-bg: #241D12;
+  --rt-banner-warn-border: #3D311C;
+  --rt-banner-warn-dot: #D9AD52;
+  --rt-banner-warn-text: #E0C077;
+  --rt-banner-warn-subtext: #A88E5C;
+  --rt-banner-ok-bg: #142A1C;
+  --rt-banner-ok-border: #1F3D2A;
+  --rt-banner-ok-text: #5FCB8A;
+  --rt-banner-ok-subtext: #4A9268;
 
-  --rt-disabled-bg: #26241F;
-  --rt-disabled-icon: #5A564C;
-
-  --rt-auth-page-bg: #171613;
-  --rt-auth-card-bg: #1D1B17;
-  --rt-auth-card-shadow: none;
-  --rt-auth-btn-secondary-bg: #211F1A;
-  --rt-auth-btn-secondary-bg-hover: #26241F;
-  --rt-auth-tab-active-bg: #33302A;
-  --rt-error-bg: #2E1E1C;
-  --rt-error-border: #4A2C29;
-  --rt-error-text: #F2A9A5;
+  --rt-disabled-bg: #1C1F2A;
+  --rt-disabled-icon: #676B78;
 }

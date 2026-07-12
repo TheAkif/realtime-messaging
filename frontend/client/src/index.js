@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'styles/reset.css';
+import 'styles/rb-tokens.css';
 
 import { store } from 'store';
 
