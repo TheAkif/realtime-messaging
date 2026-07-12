@@ -1,16 +1,21 @@
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { checkAuth } from 'features/user';
+import { checkAuth, refreshAccessToken } from 'features/user';
 
 import HomePage from 'containers/HomePage';
 import ChatPage from 'containers/ChatPage';
 import LoginPage from 'containers/LoginPage';
 import RegisterPage from 'containers/RegisterPage';
 
+// Access tokens live for 30 minutes (backend SIMPLE_JWT setting); refreshing
+// every 25 keeps a few minutes of buffer so an open tab never actually hits
+// the expiry wall during an active session.
+const TOKEN_REFRESH_INTERVAL_MS = 25 * 60 * 1000;
+
 const App = () => {
 	const dispatch = useDispatch();
-	const theme = useSelector(state => state.user.theme);
+	const { theme, isAuthenticated } = useSelector(state => state.user);
 
 	useEffect(() => {
 		dispatch(checkAuth());
@@ -20,6 +25,14 @@ const App = () => {
 		document.documentElement.setAttribute('data-theme', theme);
 		localStorage.setItem('rt-theme', theme);
 	}, [theme]);
+
+	useEffect(() => {
+		if (!isAuthenticated) return;
+		const interval = setInterval(() => {
+			dispatch(refreshAccessToken());
+		}, TOKEN_REFRESH_INTERVAL_MS);
+		return () => clearInterval(interval);
+	}, [isAuthenticated, dispatch]);
 
 	return (
 		<Router>
