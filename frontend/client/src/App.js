@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { checkAuth } from 'features/user';
 
@@ -10,10 +10,16 @@ import RegisterPage from 'containers/RegisterPage';
 
 const App = () => {
 	const dispatch = useDispatch();
+	const theme = useSelector(state => state.user.theme);
 
 	useEffect(() => {
 		dispatch(checkAuth());
 	}, []);
+
+	useEffect(() => {
+		document.documentElement.setAttribute('data-theme', theme);
+		localStorage.setItem('rt-theme', theme);
+	}, [theme]);
 
 	return (
 		<Router>

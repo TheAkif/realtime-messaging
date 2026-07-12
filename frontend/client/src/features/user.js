@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { getInitialTheme } from 'utils/theme';
 
 const firstFieldError = payload => {
 	if (!payload) return 'An error occurred';
@@ -206,6 +207,31 @@ export const getWsTicket = async () => {
 	return data.ticket;
 };
 
+// Persists the theme choice to the signed-in user's account so it follows
+// them across devices. Best-effort: if this fails, the choice still applies
+// locally (via the themeChanged reducer below) and to localStorage, it just
+// won't have synced anywhere else yet.
+export const syncThemePreference = createAsyncThunk(
+	'users/syncTheme',
+	async (theme, thunkAPI) => {
+		const { user } = thunkAPI.getState();
+		if (!user.isAuthenticated) return;
+
+		try {
+			await fetch('/api/users/theme', {
+				method: 'PATCH',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ theme }),
+			});
+		} catch (err) {
+			console.error('Could not save theme preference:', err);
+		}
+	}
+);
+
 export const logout = createAsyncThunk('users/logout', async (_, thunkAPI) => {
 	try {
 		const res = await fetch('/api/users/logout', {
@@ -237,6 +263,7 @@ const initialState = {
 	conversations: [],
 	chatHistory: null,
 	error: null,
+	theme: getInitialTheme(),
 };
 
 const userSlice = createSlice({
@@ -273,6 +300,9 @@ const userSlice = createSlice({
         markConversationRead: (state, action) => {
             const conversation = state.conversations.find(c => c.id === action.payload);
             if (conversation) conversation.unread_count = 0;
+        },
+        themeChanged: (state, action) => {
+            state.theme = action.payload;
         },
 	},
 	extraReducers: builder => {
@@ -311,6 +341,9 @@ const userSlice = createSlice({
 				state.loading = false;
 				state.user = action.payload;
                 state.error = null;
+                if (action.payload.theme_preference) {
+                    state.theme = action.payload.theme_preference;
+                }
 			})
 			.addCase(getUser.rejected, (state, action) => {
 				state.loading = false;
@@ -382,5 +415,6 @@ const userSlice = createSlice({
 	},
 });
 
-export const { resetRegistered, receiveLiveMessage, markConversationRead } = userSlice.actions;
+export const { resetRegistered, receiveLiveMessage, markConversationRead, themeChanged } =
+	userSlice.actions;
 export default userSlice.reducer;
