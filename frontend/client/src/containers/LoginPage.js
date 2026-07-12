@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { resetRegistered, login } from 'features/user';
+import { resetRegistered, login, clearError } from 'features/user';
 import RabtWordmark from 'components/RabtWordmark';
 import 'styles/rb-tokens.css';
 import 'styles/auth.css';
@@ -21,6 +21,14 @@ const LoginPage = () => {
 	useEffect(() => {
 		if (registered) dispatch(resetRegistered());
 	}, [registered]);
+
+	// A stray 401 from something unrelated (a background token refresh, a
+	// stale getUser call) can leave state.error set from before this page
+	// ever mounted - clear it so a fresh visit never shows a leftover
+	// technical message the user didn't cause.
+	useEffect(() => {
+		dispatch(clearError());
+	}, []);
 
 	const { email, password } = formData;
 

@@ -469,6 +469,6 @@ const userSlice = createSlice({
 	},
 });
 
-export const { resetRegistered, receiveLiveMessage, markConversationRead, themeChanged } =
+export const { resetRegistered, receiveLiveMessage, markConversationRead, themeChanged, clearError } =
 	userSlice.actions;
 export default userSlice.reducer;
