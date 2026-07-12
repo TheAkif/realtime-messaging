@@ -1,11 +1,22 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { getInitialTheme } from 'utils/theme';
 
-const firstFieldError = payload => {
-	if (!payload) return 'An error occurred';
-	if (payload.non_field_errors) return payload.non_field_errors[0];
+// Every backend/BFF error we produce takes one of a few shapes: DRF's
+// {"detail": "..."} (auth/permission errors, SimpleJWT), DRF's field-keyed
+// validation errors ({"email": ["..."]}) or {"non_field_errors": [...]},
+// or the Express BFF's own {"error": "..."} for its own failures. Handles
+// all of them, plus a missing/malformed payload, without ever throwing.
+const extractErrorMessage = payload => {
+	if (!payload || typeof payload !== 'object') return 'An error occurred';
+	if (typeof payload.detail === 'string') return payload.detail;
+	if (Array.isArray(payload.non_field_errors) && payload.non_field_errors.length) {
+		return payload.non_field_errors[0];
+	}
+	if (typeof payload.error === 'string') return payload.error;
 	const [firstValue] = Object.values(payload);
-	return Array.isArray(firstValue) ? firstValue[0] : firstValue || 'An error occurred';
+	if (Array.isArray(firstValue) && firstValue.length) return firstValue[0];
+	if (typeof firstValue === 'string') return firstValue;
+	return 'An error occurred';
 };
 
 export const register = createAsyncThunk(
@@ -361,7 +372,7 @@ const userSlice = createSlice({
 			})
 			.addCase(register.rejected, (state, action) => {
 				state.loading = false;
-                state.error = firstFieldError(action.payload);
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(login.pending, state => {
 				state.loading = true;
@@ -374,7 +385,7 @@ const userSlice = createSlice({
 			})
 			.addCase(login.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(getUser.pending, state => {
 				state.loading = true;
@@ -390,7 +401,7 @@ const userSlice = createSlice({
 			})
 			.addCase(getUser.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(checkAuth.pending, state => {
 				state.loading = true;
@@ -414,7 +425,7 @@ const userSlice = createSlice({
 			})
 			.addCase(logout.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(getAllUsers.pending, state => {
 				state.loading = true;
@@ -427,7 +438,7 @@ const userSlice = createSlice({
 			})
 			.addCase(getAllUsers.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(getConversations.pending, state => {
 				state.loading = true;
@@ -440,7 +451,7 @@ const userSlice = createSlice({
 			})
 			.addCase(getConversations.rejected, (state, action) => {
 				state.loading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			})
 			.addCase(getChatHistory.pending, state => {
 				state.historyLoading = true;
@@ -453,7 +464,7 @@ const userSlice = createSlice({
 			})
 			.addCase(getChatHistory.rejected, (state, action) => {
 				state.historyLoading = false;
-                state.error = action.payload.detail || "An error occurred";
+                state.error = extractErrorMessage(action.payload);
 			});
 	},
 });
