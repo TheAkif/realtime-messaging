@@ -1,258 +1,316 @@
 /*
- * Auth screens (login/register/home) - "graphite & sage".
- * Source: design_handoff_realtime_chat/README.md, artboards 2a-2c.
+ * Login / Register - split-screen layout, navy & coral system.
+ * Left panel is theme-aware (rb-tokens.css); the right brand panel is a
+ * fixed navy band regardless of theme, the way Stripe/Vercel commit to a
+ * colored brand section rather than inheriting the page surface.
  */
 
-.rt-auth-page {
+.rb-auth-page {
   min-height: 100vh;
+  background: var(--rb-bg);
+  color: var(--rb-ink);
+  font-family: var(--rb-font-body);
+}
+
+.rb-auth-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+}
+
+@media (min-width: 900px) {
+  .rb-auth-split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.rb-auth-form-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--rt-auth-page-bg);
-  font-family: var(--rt-font-ui);
-  color: var(--rt-text-primary);
-  padding: 24px;
-  box-sizing: border-box;
+  padding: 48px 24px;
 }
 
-.rt-auth-column {
+.rb-auth-form-inner {
   width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
+  max-width: 360px;
 }
 
-.rt-auth-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+.rb-auth-form-inner .rb-wordmark {
+  margin-bottom: 30px;
 }
 
-.rt-auth-wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  font-weight: 800;
-  font-size: 22px;
+.rb-auth-heading {
+  margin: 0 0 6px;
+  font: 800 27px var(--rb-font-display);
   letter-spacing: -0.01em;
 }
 
-.rt-auth-wordmark-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--rt-presence-dot);
-  display: inline-block;
-}
-
-.rt-auth-greeting {
+.rb-auth-subtext {
+  margin: 0 0 24px;
   font-size: 14px;
-  color: var(--rt-text-tertiary);
-  margin: 0;
+  color: var(--rb-ink-tertiary);
 }
 
-.rt-auth-card {
-  background: var(--rt-auth-card-bg);
-  border: 1px solid var(--rt-border);
-  border-radius: 16px;
-  padding: 26px 26px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  box-shadow: var(--rt-auth-card-shadow);
-}
-
-.rt-auth-google-btn {
+.rb-google-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
   height: 44px;
-  border-radius: 11px;
-  border: 1px solid var(--rt-border);
-  background: var(--rt-auth-btn-secondary-bg);
-  color: var(--rt-text-primary);
-  font: 600 14px var(--rt-font-ui);
+  border-radius: var(--rb-radius-md);
+  border: 1px solid var(--rb-border);
+  background: var(--rb-bg);
+  color: var(--rb-ink);
+  font: 600 13.5px var(--rb-font-body);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: .55;
+  margin-bottom: 18px;
 }
 
-.rt-auth-google-btn:hover {
-  background: var(--rt-auth-btn-secondary-bg);
-}
-
-.rt-auth-divider {
+.rb-auth-divider {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 18px;
 }
 
-.rt-auth-divider-line {
+.rb-auth-divider-line {
   flex: 1;
   height: 1px;
-  background: var(--rt-border);
+  background: var(--rb-border);
 }
 
-.rt-auth-divider-text {
-  font-family: var(--rt-font-mono);
+.rb-auth-divider-text {
+  font-family: var(--rb-font-mono);
   font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--rt-text-muted);
+  letter-spacing: .08em;
+  color: var(--rb-ink-muted);
 }
 
-.rt-auth-tablist {
-  display: flex;
-  gap: 3px;
-  background: var(--rt-field-bg);
-  border-radius: 11px;
-  padding: 3px;
-}
-
-.rt-auth-tab {
-  flex: 1;
-  height: 32px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--rt-text-tertiary);
-  font: 600 12.5px var(--rt-font-ui);
-  cursor: pointer;
-}
-
-.rt-auth-tab:hover:not([aria-selected='true']):not(:disabled) {
-  color: var(--rt-text-primary);
-}
-
-.rt-auth-tab[aria-selected='true'] {
-  background: var(--rt-auth-tab-active-bg);
-  color: var(--rt-text-primary);
-  box-shadow: 0 1px 2px rgba(28, 30, 32, .08);
-}
-
-.rt-auth-tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.rt-auth-fields {
+.rb-auth-fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-.rt-auth-field {
+.rb-field-name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rb-auth-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.rt-auth-field-row {
+.rb-auth-field-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.rt-auth-label {
-  font: 600 12.5px var(--rt-font-ui);
-  color: var(--rt-text-secondary);
+.rb-auth-label {
+  font: 600 12.5px var(--rb-font-body);
+  color: var(--rb-ink-secondary);
 }
 
-.rt-auth-forgot-link {
-  font: 600 12px var(--rt-font-ui);
-  color: var(--rt-accent);
+.rb-auth-forgot-link {
+  font: 600 12px var(--rb-font-body);
+  color: var(--rb-accent);
   text-decoration: none;
   background: none;
   border: none;
   padding: 0;
+  cursor: pointer;
 }
 
-.rt-auth-forgot-link:disabled {
-  color: var(--rt-text-muted);
+.rb-auth-forgot-link:disabled {
+  color: var(--rb-ink-muted);
   cursor: not-allowed;
 }
 
-.rt-auth-input {
+.rb-auth-input {
   width: 100%;
   box-sizing: border-box;
   height: 44px;
-  background: var(--rt-field-bg);
-  border: 1px solid transparent;
-  border-radius: 11px;
-  padding: 0 14px;
-  font-family: var(--rt-font-ui);
+  background: var(--rb-field-bg);
+  border: 1.5px solid transparent;
+  border-radius: var(--rb-radius-md);
+  padding: 0 13px;
+  font-family: var(--rb-font-body);
   font-size: 14px;
-  color: var(--rt-text-primary);
+  color: var(--rb-ink);
   outline: none;
   transition: border-color 120ms, background-color 120ms, box-shadow 120ms;
 }
 
-.rt-auth-input:focus-visible,
-.rt-auth-input:focus {
-  border-color: var(--rt-accent);
-  background: var(--rt-field-bg-focus);
-  box-shadow: 0 0 0 3px var(--rt-accent-ring);
+.rb-auth-input:focus-visible,
+.rb-auth-input:focus {
+  border-color: var(--rb-accent);
+  background: var(--rb-field-bg-focus);
+  box-shadow: 0 0 0 3px var(--rb-accent-ring);
 }
 
-.rt-auth-input:disabled {
-  opacity: 0.6;
+.rb-auth-input:disabled {
+  opacity: .6;
 }
 
-.rt-auth-error {
-  background: var(--rt-error-bg);
-  border: 1px solid var(--rt-error-border);
-  color: var(--rt-error-text);
-  border-radius: 10px;
+.rb-field-hint {
+  font-size: 11.5px;
+  color: var(--rb-ink-muted);
+  margin-top: 2px;
+  font-family: var(--rb-font-mono);
+}
+
+.rb-auth-error {
+  background: var(--rb-field-bg);
+  border: 1.5px solid var(--rb-accent);
+  color: var(--rb-ink);
+  border-radius: var(--rb-radius-sm);
   padding: 10px 12px;
   font-size: 13px;
   line-height: 1.4;
 }
 
-.rt-auth-submit {
+.rb-auth-submit {
   width: 100%;
   height: 46px;
-  border: none;
-  border-radius: 11px;
-  background: var(--rt-accent-fill);
-  color: #fff;
-  font: 700 14.5px var(--rt-font-ui);
+  border: 1.5px solid var(--rb-ink);
+  border-radius: var(--rb-radius-md);
+  background: var(--rb-ink);
+  color: var(--rb-bg);
+  font: 700 14.5px var(--rb-font-body);
   cursor: pointer;
+  box-shadow: 4px 4px 0 var(--rb-accent);
+  transition: transform 100ms, box-shadow 100ms;
 }
 
-.rt-auth-submit:hover:not(:disabled) {
-  background: var(--rt-accent-fill-hover);
+.rb-auth-submit:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--rb-accent);
 }
 
-.rt-auth-submit:disabled {
+.rb-auth-submit:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--rb-accent);
+}
+
+.rb-auth-submit:disabled {
   cursor: not-allowed;
-  opacity: 0.75;
+  opacity: .75;
 }
 
-.rt-auth-footer {
+.rb-auth-footer {
   text-align: center;
   font-size: 13.5px;
-  color: var(--rt-text-tertiary);
+  color: var(--rb-ink-tertiary);
+  margin: 20px 0 0;
 }
 
-.rt-auth-footer-link {
-  color: var(--rt-accent);
+.rb-auth-footer-link {
+  color: var(--rb-accent);
   font-weight: 700;
   text-decoration: none;
 }
 
-.rt-auth-footer-link:hover {
+.rb-auth-footer-link:hover {
   text-decoration: underline;
 }
 
+/* -------- brand panel (fixed navy, not theme-dependent) -------- */
+
+.rb-auth-brand-panel {
+  background: var(--rb-brand-navy);
+  background-image: radial-gradient(var(--rb-brand-dot) 1.4px, transparent 1.4px);
+  background-size: 15px 15px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  border-left: 1.5px solid var(--rb-ink);
+}
+
+@media (min-width: 900px) {
+  .rb-auth-brand-panel {
+    display: flex;
+  }
+}
+
+.rb-brand-panel-inner {
+  width: 100%;
+  max-width: 340px;
+}
+
+.rb-brand-panel-inner .rb-wordmark {
+  margin-bottom: 26px;
+}
+
+.rb-brand-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.rb-mini-bubble {
+  max-width: 88%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.rb-mini-bubble.recv {
+  background: var(--rb-brand-bubble-recv);
+  color: var(--rb-brand-ink);
+  border: 1px solid var(--rb-brand-border);
+  align-self: flex-start;
+  border-bottom-left-radius: 3px;
+}
+
+.rb-mini-bubble.sent {
+  background: var(--rb-brand-bubble-sent);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 3px;
+}
+
+.rb-brand-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rb-brand-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 13.5px var(--rb-font-body);
+  color: var(--rb-brand-ink-secondary);
+}
+
+.rb-brand-feature-list li svg {
+  width: 16px;
+  height: 16px;
+  color: var(--rb-brand-accent);
+  flex-shrink: 0;
+}
+
 :focus-visible {
-  outline: 2px solid var(--rt-accent);
+  outline: 2px solid var(--rb-accent);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rt-auth-input {
+  .rb-auth-input,
+  .rb-auth-submit {
     transition: none;
   }
 }
