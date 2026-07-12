@@ -5,6 +5,7 @@ from messaging.views import (
     MessageViewSet,
     RegisterViewSet,
     RetrieveUserViewSet,
+    ThemePreferenceView,
     UserListViewSet,
     WSTicketView,
 )
@@ -18,5 +19,6 @@ urlpatterns = [
     path("register", RegisterViewSet.as_view()),
     path("me", RetrieveUserViewSet.as_view()),
     path("ws-ticket", WSTicketView.as_view()),
+    path("theme", ThemePreferenceView.as_view()),
     path("conversations", ConversationListView.as_view()),
 ]

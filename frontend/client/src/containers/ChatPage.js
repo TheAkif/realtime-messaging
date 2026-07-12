@@ -9,6 +9,8 @@ import {
 	logout,
 	receiveLiveMessage,
 	markConversationRead,
+	themeChanged,
+	syncThemePreference,
 } from 'features/user';
 import { WS_URL } from 'config';
 import Sidebar from 'components/chat/Sidebar';
@@ -17,7 +19,6 @@ import MessageThread from 'components/chat/MessageThread';
 import Composer from 'components/chat/Composer';
 import ConnectionBanner from 'components/chat/ConnectionBanner';
 import NoConversationSelected from 'components/chat/NoConversationSelected';
-import { getInitialTheme } from 'utils/theme';
 import 'styles/tokens.css';
 import 'styles/chat.css';
 
@@ -27,12 +28,11 @@ const RECONNECT_DELAY_MS = 2000;
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
-	const { isAuthenticated, user, loading, historyLoading, conversations, chatHistory } =
+	const { isAuthenticated, user, loading, historyLoading, conversations, chatHistory, theme } =
 		useSelector(state => state.user);
 
 	const [activeChatUser, setActiveChatUser] = useState(null);
 	const [message, setMessage] = useState('');
-	const [theme, setTheme] = useState(getInitialTheme);
 	const [wsStatus, setWsStatus] = useState('disconnected');
 	const [pendingMessages, setPendingMessages] = useState([]);
 	const [justReconnectedCount, setJustReconnectedCount] = useState(0);
@@ -53,10 +53,11 @@ const ChatPage = () => {
 		dispatch(getConversations());
 	}, [dispatch]);
 
-	useEffect(() => {
-		document.documentElement.setAttribute('data-theme', theme);
-		localStorage.setItem('rt-theme', theme);
-	}, [theme]);
+	const handleToggleTheme = () => {
+		const next = theme === 'dark' ? 'light' : 'dark';
+		dispatch(themeChanged(next));
+		dispatch(syncThemePreference(next));
+	};
 
 	const closeSocket = useCallback(() => {
 		clearTimeout(reconnectTimeoutRef.current);
@@ -214,7 +215,7 @@ const ChatPage = () => {
 					typingFromUserId={isContactTyping ? activeChatUser?.id : null}
 					onSelect={handleSelectConversation}
 					theme={theme}
-					onToggleTheme={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+					onToggleTheme={handleToggleTheme}
 					currentUser={user || {}}
 					onLogout={handleLogout}
 				/>

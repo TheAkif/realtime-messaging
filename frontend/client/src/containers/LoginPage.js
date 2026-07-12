@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { resetRegistered, login } from 'features/user';
-import { getInitialTheme } from 'utils/theme';
 import 'styles/tokens.css';
 import 'styles/auth.css';
 
@@ -17,10 +16,6 @@ const LoginPage = () => {
 		email: '',
 		password: '',
 	});
-
-	useEffect(() => {
-		document.documentElement.setAttribute('data-theme', getInitialTheme());
-	}, []);
 
 	useEffect(() => {
 		if (registered) dispatch(resetRegistered());

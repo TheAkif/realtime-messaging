@@ -63,4 +63,12 @@ class UserReadOnlySerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "chat_uuid",
+            "theme_preference",
         )
+
+
+class ThemePreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("theme_preference",)
+        extra_kwargs = {"theme_preference": {"required": True, "allow_null": False}}

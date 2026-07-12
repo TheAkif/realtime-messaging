@@ -72,6 +72,30 @@ router.get('/api/users/conversations', async (req, res) => {
 });
 
 
+router.patch('/api/users/theme', async (req, res) => {
+	const { access } = req.cookies;
+
+	try {
+		const apiRes = await fetch(`${process.env.API_URL}/api/users/theme`, {
+			method: 'PATCH',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${access}`,
+			},
+			body: JSON.stringify({ theme_preference: req.body.theme }),
+		});
+
+		const data = await apiRes.json();
+		return res.status(apiRes.status).json(data);
+	} catch (err) {
+		return res.status(500).json({
+			error: 'Something went wrong when saving theme preference',
+		});
+	}
+});
+
+
 router.get('/api/users/ws-ticket', async (req, res) => {
 	const { access } = req.cookies;
 
