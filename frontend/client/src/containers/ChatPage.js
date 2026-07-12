@@ -25,6 +25,7 @@ import 'styles/chat.css';
 const TYPING_SEND_THROTTLE_MS = 2000;
 const TYPING_CLEAR_TIMEOUT_MS = 3000;
 const RECONNECT_DELAY_MS = 2000;
+const SOCKET_ERROR_DISPLAY_MS = 4000;
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
@@ -37,10 +38,12 @@ const ChatPage = () => {
 	const [pendingMessages, setPendingMessages] = useState([]);
 	const [justReconnectedCount, setJustReconnectedCount] = useState(0);
 	const [isContactTyping, setIsContactTyping] = useState(false);
+	const [socketErrorMessage, setSocketErrorMessage] = useState(null);
 
 	const ws = useRef(null);
 	const reconnectTimeoutRef = useRef(null);
 	const typingClearTimeoutRef = useRef(null);
+	const socketErrorTimeoutRef = useRef(null);
 	const lastTypingSentAtRef = useRef(0);
 	const pendingIdRef = useRef(0);
 	const pendingMessagesRef = useRef([]);
@@ -68,6 +71,15 @@ const ChatPage = () => {
 		}
 	}, []);
 
+	const showSocketError = useCallback((msg) => {
+		clearTimeout(socketErrorTimeoutRef.current);
+		setSocketErrorMessage(msg);
+		socketErrorTimeoutRef.current = setTimeout(
+			() => setSocketErrorMessage(null),
+			SOCKET_ERROR_DISPLAY_MS
+		);
+	}, []);
+
 	const connectWebSocket = useCallback(
 		async (contact) => {
 			let ticket;
@@ -75,6 +87,7 @@ const ChatPage = () => {
 				ticket = await getWsTicket();
 			} catch (err) {
 				console.error('Could not start chat session:', err);
+				showSocketError('Could not start chat session. Try selecting the conversation again.');
 				return;
 			}
 
@@ -99,6 +112,11 @@ const ChatPage = () => {
 
 			socket.onmessage = (e) => {
 				const data = JSON.parse(e.data);
+
+				if (data.error) {
+					showSocketError(data.error);
+					return;
+				}
 
 				if (data.type === 'typing') {
 					setIsContactTyping(true);
@@ -140,7 +158,7 @@ const ChatPage = () => {
 				);
 			};
 		},
-		[dispatch, user]
+		[dispatch, user, showSocketError]
 	);
 
 	useEffect(() => closeSocket, [closeSocket]);
@@ -221,7 +239,11 @@ const ChatPage = () => {
 				/>
 				{activeChatUser ? (
 					<div className="rt-thread-pane" style={{ position: 'relative' }}>
-						<ConnectionBanner status={wsStatus} justReconnectedCount={justReconnectedCount} />
+						<ConnectionBanner
+							status={wsStatus}
+							justReconnectedCount={justReconnectedCount}
+							errorMessage={socketErrorMessage}
+						/>
 						<ChatHeader contact={activeChatUser} onBack={handleBack} />
 						<MessageThread
 							messages={chatHistory || []}
