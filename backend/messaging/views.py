@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from messaging.models import Message
 from messaging.serializers import (
     MessageSerializer,
+    ThemePreferenceSerializer,
     UserCreateSerializer,
     UserReadOnlySerializer,
 )
@@ -153,6 +154,24 @@ class ConversationListView(APIView):
             )
         )
         return Response(conversations, status=status.HTTP_200_OK)
+
+
+class ThemePreferenceView(APIView):
+    """
+    Lets a signed-in user persist their light/dark choice to their account,
+    so it follows them across devices instead of living only in one
+    browser's localStorage.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = ThemePreferenceSerializer(
+            request.user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class WSTicketView(APIView):

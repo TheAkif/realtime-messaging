@@ -47,6 +47,8 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     User Account Model.
     """
 
+    THEME_CHOICES = [("light", "Light"), ("dark", "Dark")]
+
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,
@@ -58,6 +60,11 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    # Null means "no explicit choice yet" - the client falls back to the
+    # browser/OS preference until the user picks a theme.
+    theme_preference = models.CharField(
+        max_length=5, choices=THEME_CHOICES, null=True, blank=True
+    )
 
     objects = UserProfileManager()
 
