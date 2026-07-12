@@ -1,0 +1,12 @@
+/*
+ * The browser's default UA stylesheet puts an 8px margin on <body>. Every
+ * full-bleed min-height:100vh page in this app (chat, home, login, register)
+ * inherits that margin as extra document height, forcing a permanent ~16px
+ * scrollbar even when the page's own content fits the viewport exactly.
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
