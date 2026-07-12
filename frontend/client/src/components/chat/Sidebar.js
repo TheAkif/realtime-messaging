@@ -29,7 +29,7 @@ const Sidebar = ({
 		<div className="rt-sidebar">
 			<div className="rt-sidebar-header">
 				<span className="rt-wordmark">
-					RealTime
+					Rabt
 					<span className="rt-wordmark-dot" aria-hidden="true" />
 				</span>
 				<span className="rt-sidebar-header-actions">
