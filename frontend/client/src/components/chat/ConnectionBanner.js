@@ -1,4 +1,15 @@
-const ConnectionBanner = ({ status, justReconnectedCount }) => {
+const ConnectionBanner = ({ status, justReconnectedCount, errorMessage }) => {
+	if (errorMessage) {
+		return (
+			<div className="rt-banner-wrap">
+				<div role="status" className="rt-banner rt-banner--warn">
+					<span className="rt-banner-dot" aria-hidden="true" />
+					<span className="rt-banner-title">{errorMessage}</span>
+				</div>
+			</div>
+		);
+	}
+
 	if (status === 'reconnecting') {
 		return (
 			<div className="rt-banner-wrap">
