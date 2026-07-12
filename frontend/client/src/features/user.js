@@ -163,16 +163,59 @@ export const login = createAsyncThunk(
 	}
 );
 
-export const checkAuth = createAsyncThunk(
-	'users/verify',
+// Mints a new access-token cookie from the longer-lived refresh cookie.
+// Deliberately doesn't touch loading/error state - it's meant to run
+// silently, either in the background on a timer or as a retry-once inside
+// checkAuth, without flashing a page-wide spinner.
+export const refreshAccessToken = createAsyncThunk(
+	'users/refresh',
 	async (_, thunkAPI) => {
 		try {
-			const res = await fetch('/api/users/verify', {
-				method: 'GET',
+			const res = await fetch('/api/users/refresh', {
+				method: 'POST',
 				headers: {
 					Accept: 'application/json',
 				},
 			});
+
+			const data = await res.json();
+
+			if (res.status === 200) {
+				return data;
+			} else {
+				return thunkAPI.rejectWithValue(data);
+			}
+		} catch (err) {
+			return thunkAPI.rejectWithValue({ detail: 'Network error' });
+		}
+	}
+);
+
+export const checkAuth = createAsyncThunk(
+	'users/verify',
+	async (_, thunkAPI) => {
+		try {
+			const verify = () =>
+				fetch('/api/users/verify', {
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+					},
+				});
+
+			let res = await verify();
+
+			// The access token cookie is short-lived (30 min). If it's expired
+			// but the refresh cookie (24h) is still good, mint a new access
+			// token and verify again before giving up - otherwise every
+			// returning user with a stale access token gets bounced to
+			// /login even though their session is still valid.
+			if (res.status !== 200) {
+				const refreshResult = await thunkAPI.dispatch(refreshAccessToken());
+				if (refreshAccessToken.fulfilled.match(refreshResult)) {
+					res = await verify();
+				}
+			}
 
 			const data = await res.json();
 
