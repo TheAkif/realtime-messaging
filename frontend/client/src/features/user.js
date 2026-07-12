@@ -36,7 +36,7 @@ export const register = createAsyncThunk(
 				return thunkAPI.rejectWithValue(data);
 			}
 		} catch (err) {
-			return thunkAPI.rejectWithValue(err.response.data);
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 		}
 	}
 );
@@ -58,7 +58,7 @@ const getUser = createAsyncThunk('users/me', async (_, thunkAPI) => {
 			return thunkAPI.rejectWithValue(data);
 		}
 	} catch (err) {
-		return thunkAPI.rejectWithValue(err.response.data);
+		return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 	}
 });
 
@@ -79,7 +79,7 @@ export const getAllUsers = createAsyncThunk('users/all', async (_, thunkAPI) => 
 			return thunkAPI.rejectWithValue(data);
 		}
 	} catch (err) {
-		return thunkAPI.rejectWithValue(err.response.data);
+		return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 	}
 });
 
@@ -100,7 +100,7 @@ export const getConversations = createAsyncThunk('users/conversations', async (_
 			return thunkAPI.rejectWithValue(data);
 		}
 	} catch (err) {
-		return thunkAPI.rejectWithValue(err.response.data);
+		return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 	}
 });
 
@@ -123,7 +123,7 @@ export const getChatHistory = createAsyncThunk(
 				return thunkAPI.rejectWithValue(data);
 			}
 		} catch (err) {
-			return thunkAPI.rejectWithValue(err.response.data);
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 		}
 	}
 );
@@ -158,7 +158,7 @@ export const login = createAsyncThunk(
 				return thunkAPI.rejectWithValue(data);
 			}
 		} catch (err) {
-			return thunkAPI.rejectWithValue(err.response.data);
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 		}
 	}
 );
@@ -229,7 +229,7 @@ export const checkAuth = createAsyncThunk(
 				return thunkAPI.rejectWithValue(data);
 			}
 		} catch (err) {
-			return thunkAPI.rejectWithValue(err.response.data);
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 		}
 	}
 );
@@ -292,7 +292,7 @@ export const logout = createAsyncThunk('users/logout', async (_, thunkAPI) => {
 			return thunkAPI.rejectWithValue(data);
 		}
 	} catch (err) {
-		return thunkAPI.rejectWithValue(err.response.data);
+		return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
 	}
 });
 
