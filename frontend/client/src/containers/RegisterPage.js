@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { register } from 'features/user';
-import { getInitialTheme } from 'utils/theme';
 import 'styles/tokens.css';
 import 'styles/auth.css';
 
@@ -17,10 +16,6 @@ const RegisterPage = () => {
 		email: '',
 		password: '',
 	});
-
-	useEffect(() => {
-		document.documentElement.setAttribute('data-theme', getInitialTheme());
-	}, []);
 
 	const { first_name, last_name, email, password } = formData;
 
