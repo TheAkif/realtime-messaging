@@ -103,7 +103,6 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--rb-font-mono);
   font-size: 11px;
   letter-spacing: .08em;
   color: var(--rb-ink-secondary);
@@ -178,7 +177,6 @@
 }
 
 .rb-proof-row {
-  font-family: var(--rb-font-mono);
   font-size: 11px;
   letter-spacing: .05em;
   color: var(--rb-ink-muted);
@@ -229,7 +227,6 @@
 
 .rb-window-url {
   margin-left: 8px;
-  font-family: var(--rb-font-mono);
   font-size: 10.5px;
   color: var(--rb-ink-tertiary);
   background: var(--rb-field-bg);
@@ -366,7 +363,6 @@
 }
 
 .rb-feature-num {
-  font-family: var(--rb-font-mono);
   font-size: 11px;
   color: var(--rb-accent);
   margin-bottom: 10px;
@@ -408,7 +404,6 @@
   margin: 0;
   font-size: 12.5px;
   color: var(--rb-ink-muted);
-  font-family: var(--rb-font-mono);
 }
 
 @media (prefers-reduced-motion: reduce) {

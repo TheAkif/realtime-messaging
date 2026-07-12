@@ -19,7 +19,7 @@ const ConversationRow = ({ conversation, isActive, isTyping, onSelect }) => {
 						{first_name} {last_name}
 					</span>
 					{last_message && (
-						<span className="rt-conversation-time rt-mono">
+						<span className="rt-conversation-time">
 							{conversationTimeFor(last_message.timestamp)}
 						</span>
 					)}

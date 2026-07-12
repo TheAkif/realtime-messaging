@@ -8,7 +8,6 @@
 :root {
   --rb-font-display: 'Bricolage Grotesque', 'Arial Black', system-ui, sans-serif;
   --rb-font-body: 'Work Sans', -apple-system, 'Segoe UI', sans-serif;
-  --rb-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --rb-bg: #FFFFFF;
   --rb-bg-alt: #F1F2F4;
