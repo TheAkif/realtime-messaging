@@ -30,7 +30,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         try:
             validate_password(password, user)
         except ValidationError as e:
-            raise serializers.ValidationError(e)
+            raise serializers.ValidationError({"password": e.messages})
 
         return attrs
 
