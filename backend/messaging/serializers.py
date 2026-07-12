@@ -32,6 +32,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
         except ValidationError as e:
             raise serializers.ValidationError({"password": e.messages})
 
+        # Deliberately not field-specific (see the email validators=[]
+        # override below): a {"email": [...]} error would itself confirm
+        # the account exists (account enumeration via registration - OWASP
+        # ASVS 2.1). A generic, non-field error can't be distinguished from
+        # any other registration failure.
+        if User.objects.filter(email__iexact=attrs["email"]).exists():
+            raise serializers.ValidationError(
+                "We couldn't create your account with those details. "
+                "Please check your details and try again."
+            )
+
         return attrs
 
     def create(self, validated_data):
@@ -47,7 +58,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "email",
             "password",
         )
-        extra_kwargs = {"password": {"write_only": True}}
+        extra_kwargs = {
+            "password": {"write_only": True},
+            # Uniqueness is checked manually in validate() instead of via
+            # the auto-generated UniqueValidator, so a duplicate email
+            # doesn't surface as a distinguishing {"email": [...]} error.
+            "email": {"validators": []},
+        }
 
 
 class UserReadOnlySerializer(serializers.ModelSerializer):
