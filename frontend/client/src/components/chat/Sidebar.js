@@ -5,6 +5,19 @@ import NoConversations from './NoConversations';
 import ThemeToggle from './ThemeToggle';
 import RabtWordmark from 'components/RabtWordmark';
 
+const PlusIcon = () => (
+	<svg className="rt-svg-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+		<path d="M12 5v14M5 12h14" />
+	</svg>
+);
+
+const SearchIcon = () => (
+	<svg className="rt-svg-icon" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+		<circle cx="11" cy="11" r="7" />
+		<path d="m21 21-4.3-4.3" />
+	</svg>
+);
+
 const Sidebar = ({
 	conversations,
 	activeChatUser,
@@ -38,7 +51,7 @@ const Sidebar = ({
 						className="rt-icon-btn rt-new-message-btn"
 						onClick={focusSearch}
 					>
-						+
+						<PlusIcon />
 					</button>
 				</span>
 			</div>
@@ -46,6 +59,9 @@ const Sidebar = ({
 				<label htmlFor={searchInputId} className="rt-visually-hidden">
 					Search conversations
 				</label>
+				<span className="rt-search-icon" aria-hidden="true">
+					<SearchIcon />
+				</span>
 				<input
 					id={searchInputId}
 					ref={searchInputRef}

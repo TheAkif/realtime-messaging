@@ -8,6 +8,7 @@
 :root {
   --rt-font-ui: 'Work Sans', -apple-system, 'Segoe UI', sans-serif;
   --rt-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --rt-font-display: 'Bricolage Grotesque', 'Arial Black', system-ui, sans-serif;
 
   /* Surfaces */
   --rt-bg-thread: #FFFFFF;
@@ -77,6 +78,11 @@
   --rt-disabled-bg: #EEEFF2;
   --rt-disabled-icon: #9498A3;
 
+  /* Elevation - deliberately subtle (soft, not the marketing pages' hard
+     offset shadows) since this is a dense functional UI, not a hero. */
+  --rt-shadow-row: 0 1px 2px rgba(18, 20, 28, .05);
+  --rt-shadow-soft: 0 1px 2px rgba(18, 20, 28, .04), 0 8px 24px -12px rgba(18, 20, 28, .10);
+
   /* Shape */
   --rt-radius-bubble: 16px;
   --rt-radius-anchor-tight: 5px;
@@ -140,6 +146,9 @@
 
     --rt-disabled-bg: #1C1F2A;
     --rt-disabled-icon: #676B78;
+
+    --rt-shadow-row: 0 1px 2px rgba(0, 0, 0, .3);
+    --rt-shadow-soft: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 28px -14px rgba(0, 0, 0, .55);
   }
 }
 
@@ -195,4 +204,7 @@
 
   --rt-disabled-bg: #1C1F2A;
   --rt-disabled-icon: #676B78;
+
+  --rt-shadow-row: 0 1px 2px rgba(0, 0, 0, .3);
+  --rt-shadow-soft: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 28px -14px rgba(0, 0, 0, .55);
 }

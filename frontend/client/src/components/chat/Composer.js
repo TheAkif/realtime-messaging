@@ -12,6 +12,18 @@ const SendIcon = () => (
 	</svg>
 );
 
+const AttachIcon = () => (
+	<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+		<path
+			d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.42 17.4a1.5 1.5 0 0 1-2.12-2.12l8.49-8.49"
+			stroke="currentColor"
+			strokeWidth="1.7"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+		/>
+	</svg>
+);
+
 const EmojiIcon = () => (
 	<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
 		<circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
@@ -59,7 +71,7 @@ const Composer = ({ contact, value, onChange, onSend, onTyping }) => {
 				{/* File attachments aren't supported by the backend yet - see
 				    ISSUES.md Phase 5. Left as a visual placeholder. */}
 				<button type="button" aria-label="Attach a file" className="rt-attach-btn" disabled>
-					+
+					<AttachIcon />
 				</button>
 				<div className="rt-field">
 					<textarea

@@ -1,5 +1,19 @@
 import Avatar from './Avatar';
 
+const BackIcon = () => (
+	<svg className="rt-svg-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+		<path d="m15 18-6-6 6-6" />
+	</svg>
+);
+
+const MoreIcon = () => (
+	<svg className="rt-svg-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+		<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+		<circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+		<circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+	</svg>
+);
+
 const ChatHeader = ({ contact, onBack }) => (
 	<div className="rt-chat-header">
 		<button
@@ -8,7 +22,7 @@ const ChatHeader = ({ contact, onBack }) => (
 			className="rt-back-btn"
 			onClick={onBack}
 		>
-			‹
+			<BackIcon />
 		</button>
 		<Avatar
 			userId={contact.id}
@@ -22,7 +36,7 @@ const ChatHeader = ({ contact, onBack }) => (
 			</span>
 		</div>
 		<button type="button" aria-label="Conversation options" className="rt-options-btn">
-			···
+			<MoreIcon />
 		</button>
 	</div>
 );
