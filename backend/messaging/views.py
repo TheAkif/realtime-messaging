@@ -2,9 +2,12 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 
 from rest_framework import viewsets, status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from messaging.models import Message
 from messaging.serializers import (
     MessageSerializer,
@@ -18,6 +21,26 @@ from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class QuietTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    SimpleJWT's default failure message ("No active account found with the
+    given credentials") is a verbatim, googleable library string that
+    fingerprints the tech stack for reconnaissance. It's already safe
+    content-wise - it doesn't distinguish "no such email" from "wrong
+    password" - just neutral, stack-agnostic wording instead.
+    """
+
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except AuthenticationFailed:
+            raise AuthenticationFailed("Invalid email or password.")
+
+
+class QuietTokenObtainPairView(TokenObtainPairView):
+    serializer_class = QuietTokenObtainPairSerializer
 
 
 class UserListViewSet(viewsets.ReadOnlyModelViewSet):
