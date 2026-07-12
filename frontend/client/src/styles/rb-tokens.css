@@ -1,0 +1,75 @@
+/*
+ * Design tokens for Rabt's marketing/auth surfaces (Home, Login, Register) -
+ * navy & coral, distinct from the chat UI's graphite & sage system in
+ * tokens.css. Follows the same [data-theme] / prefers-color-scheme pattern
+ * so it responds to the same app-wide theme toggle.
+ */
+
+:root {
+  --rb-font-display: 'Bricolage Grotesque', 'Arial Black', system-ui, sans-serif;
+  --rb-font-body: 'Work Sans', -apple-system, 'Segoe UI', sans-serif;
+  --rb-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --rb-bg: #FFFFFF;
+  --rb-bg-alt: #F1F2F4;
+  --rb-ink: #12141C;
+  --rb-ink-secondary: #494D59;
+  --rb-ink-tertiary: #6E7280;
+  --rb-ink-muted: #9498A3;
+  --rb-border: #E2E3E8;
+  --rb-field-bg: #EEEFF2;
+  --rb-field-bg-focus: #FFFFFF;
+  --rb-accent: #E8482C;
+  --rb-accent-hover: #C93A21;
+  --rb-accent-ring: rgba(232, 72, 44, .16);
+  --rb-shadow-hard: 8px 8px 0 var(--rb-ink);
+
+  /* Fixed brand-panel tokens: intentionally NOT theme-dependent, the way a
+     real product commits to a colored brand band regardless of page theme. */
+  --rb-brand-navy: #12141C;
+  --rb-brand-border: #2A2E3C;
+  --rb-brand-ink: #F1F1EF;
+  --rb-brand-ink-secondary: #A9ACB8;
+  --rb-brand-accent: #FF6A45;
+  --rb-brand-dot: #232634;
+  --rb-brand-bubble-sent: #FF6A45;
+  --rb-brand-bubble-recv: rgba(255, 255, 255, .07);
+
+  --rb-radius-sm: 6px;
+  --rb-radius-md: 8px;
+  --rb-radius-lg: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --rb-bg: #0F1117;
+    --rb-bg-alt: #171923;
+    --rb-ink: #F1F1EF;
+    --rb-ink-secondary: #B7BAC4;
+    --rb-ink-tertiary: #8B8F9C;
+    --rb-ink-muted: #676B78;
+    --rb-border: #262A36;
+    --rb-field-bg: #1C1F2A;
+    --rb-field-bg-focus: #20222E;
+    --rb-accent: #FF6A45;
+    --rb-accent-hover: #FF8563;
+    --rb-accent-ring: rgba(255, 106, 69, .18);
+    --rb-shadow-hard: 8px 8px 0 rgba(0, 0, 0, .55);
+  }
+}
+
+:root[data-theme='dark'] {
+  --rb-bg: #0F1117;
+  --rb-bg-alt: #171923;
+  --rb-ink: #F1F1EF;
+  --rb-ink-secondary: #B7BAC4;
+  --rb-ink-tertiary: #8B8F9C;
+  --rb-ink-muted: #676B78;
+  --rb-border: #262A36;
+  --rb-field-bg: #1C1F2A;
+  --rb-field-bg-focus: #20222E;
+  --rb-accent: #FF6A45;
+  --rb-accent-hover: #FF8563;
+  --rb-accent-ring: rgba(255, 106, 69, .18);
+  --rb-shadow-hard: 8px 8px 0 rgba(0, 0, 0, .55);
+}

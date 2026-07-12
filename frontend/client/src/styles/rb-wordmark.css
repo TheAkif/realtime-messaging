@@ -1,0 +1,33 @@
+.rb-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 18px var(--rb-font-display);
+  letter-spacing: -0.01em;
+  color: var(--rb-ink);
+}
+
+.rb-wordmark--on-navy {
+  color: var(--rb-brand-ink);
+}
+
+.rb-mark {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.rb-mark span {
+  width: 3px;
+  border-radius: 1px;
+  background: var(--rb-accent);
+}
+
+.rb-mark span:nth-child(1) { height: 6px; }
+.rb-mark span:nth-child(2) { height: 10px; }
+.rb-mark span:nth-child(3) { height: 14px; }
+
+.rb-wordmark--on-navy .rb-mark span {
+  background: var(--rb-brand-accent);
+}
