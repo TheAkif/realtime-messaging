@@ -7,6 +7,7 @@ require('dotenv').config();
 const loginRoute = require('./routes/auth/login');
 const logoutRoute = require('./routes/auth/logout');
 const meRoute = require('./routes/auth/me');
+const refreshRoute = require('./routes/auth/refresh');
 const registerRoute = require('./routes/auth/register');
 const verifyRoute = require('./routes/auth/verify');
 const chatRoute = require('./routes/chat/chat')
@@ -24,6 +25,7 @@ app.use(cookieParser());
 app.use(loginRoute);
 app.use(logoutRoute);
 app.use(meRoute);
+app.use(refreshRoute);
 app.use(registerRoute);
 app.use(verifyRoute);
 app.use(chatRoute)
