@@ -223,7 +223,7 @@ const ChatPage = () => {
 	return (
 		<>
 			<Helmet>
-				<title>Realtime messaging | Chat</title>
+				<title>Rabt | Chat</title>
 				<meta name="description" content="Chat page" />
 			</Helmet>
 			<div className="rt-app" data-mobile-view={activeChatUser ? 'thread' : 'list'}>

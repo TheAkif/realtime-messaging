@@ -1,6 +1,6 @@
-/* RealTime chat UI - "graphite & sage". Built defensively against
+/* Rabt chat UI - navy & coral (see tokens.css). Built defensively against
    Bootstrap's global resets (explicit box-sizing, no reliance on Bootstrap
-   classes) since both stylesheets are loaded together. */
+   classes) since both stylesheets were loaded together historically. */
 
 .rt-app,
 .rt-app *,
@@ -23,10 +23,6 @@
 .rt-app button {
   color: var(--rt-text-primary);
   font-family: var(--rt-font-ui);
-}
-
-.rt-mono {
-  font-family: var(--rt-font-mono);
 }
 
 .rt-visually-hidden {
@@ -65,45 +61,45 @@
   padding: 20px 18px 14px;
 }
 
-.rt-wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: var(--rt-text-primary);
-}
-
-.rt-wordmark-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--rt-presence-dot);
-  display: inline-block;
-}
-
 .rt-icon-btn {
   border-radius: 9px;
   border: 1px solid var(--rt-border);
   background: var(--rt-surface-raised);
-  color: var(--rt-accent);
+  color: var(--rt-text-secondary);
   cursor: pointer;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color .12s, color .12s;
+  transition: border-color .12s, color .12s, background-color .12s;
 }
 
 .rt-icon-btn:hover {
   border-color: var(--rt-accent);
+  color: var(--rt-accent);
+}
+
+.rt-svg-icon {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
 }
 
 .rt-new-message-btn {
   width: 30px;
   height: 30px;
-  font: 600 17px var(--rt-font-ui);
+  background: var(--rt-text-primary);
+  border-color: var(--rt-text-primary);
+  color: var(--rt-bg-thread);
+}
+
+.rt-new-message-btn:hover {
+  background: var(--rt-accent);
+  border-color: var(--rt-accent);
+  color: #fff;
 }
 
 .rt-sidebar-header-actions {
@@ -119,7 +115,17 @@
 }
 
 .rt-search-wrap {
+  position: relative;
   padding: 0 14px 12px;
+}
+
+.rt-search-icon {
+  position: absolute;
+  left: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--rt-text-muted);
+  pointer-events: none;
 }
 
 .rt-search-input {
@@ -127,7 +133,7 @@
   background: var(--rt-field-bg);
   border: 1px solid transparent;
   border-radius: 10px;
-  padding: 9px 12px;
+  padding: 9px 12px 9px 34px;
   font-family: var(--rt-font-ui);
   font-size: 13.5px;
   color: var(--rt-text-primary);
@@ -141,6 +147,7 @@
 
 .rt-search-input:focus-visible,
 .rt-search-input:focus {
+  outline: none;
   border-color: var(--rt-accent);
   background: var(--rt-field-bg-focus);
 }
@@ -192,17 +199,18 @@
 }
 
 .rt-conversation-row {
+  position: relative;
   display: flex;
   gap: 11px;
   align-items: center;
-  padding: 11px 10px;
+  padding: 11px 10px 11px 13px;
   border-radius: var(--rt-radius-row-desktop);
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background .12s;
+  transition: background .12s, box-shadow .12s;
 }
 
 .rt-conversation-row:hover {
@@ -210,7 +218,19 @@
 }
 
 .rt-conversation-row[aria-current='true'] {
-  background: var(--rt-row-selected);
+  background: var(--rt-surface-raised);
+  box-shadow: var(--rt-shadow-row);
+}
+
+.rt-conversation-row[aria-current='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--rt-accent);
 }
 
 .rt-conversation-meta {
@@ -238,7 +258,6 @@
 }
 
 .rt-conversation-time {
-  font-family: var(--rt-font-mono);
   font-size: 10px;
   color: var(--rt-text-muted);
   white-space: nowrap;
@@ -262,6 +281,7 @@
 
 .rt-conversation-preview.is-unread {
   color: var(--rt-text-secondary);
+  font-weight: 600;
 }
 
 .rt-conversation-preview.is-read {
@@ -269,7 +289,6 @@
 }
 
 .rt-conversation-typing {
-  font-family: var(--rt-font-mono);
   font-size: 11.5px;
   color: var(--rt-accent-muted-text);
   white-space: nowrap;
@@ -305,6 +324,7 @@
   justify-content: center;
   border-radius: 50%;
   font-weight: 700;
+  font-family: var(--rt-font-display);
 }
 
 .rt-avatar[data-tint='0'] { background: var(--rt-avatar-1-bg); color: var(--rt-avatar-1-fg); }
@@ -361,10 +381,8 @@
   border: none;
   background: transparent;
   color: var(--rt-text-primary);
-  font-size: 24px;
   cursor: pointer;
   line-height: 1;
-  padding-bottom: 3px;
   display: none;
   align-items: center;
   justify-content: center;
@@ -383,6 +401,7 @@
 }
 
 .rt-header-name {
+  font-family: var(--rt-font-display);
   font-weight: 700;
   font-size: 15.5px;
   overflow: hidden;
@@ -391,7 +410,6 @@
 }
 
 .rt-header-presence {
-  font-family: var(--rt-font-mono);
   font-size: 10.5px;
   color: var(--rt-text-muted);
 }
@@ -429,7 +447,6 @@
 
 .rt-day-divider {
   align-self: center;
-  font-family: var(--rt-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--rt-text-muted);
@@ -466,6 +483,7 @@
   font-size: 14.5px;
   line-height: 1.45;
   overflow-wrap: break-word;
+  box-shadow: var(--rt-shadow-row);
 }
 
 .rt-bubble--received {
@@ -479,7 +497,6 @@
 }
 
 .rt-message-ts {
-  font-family: var(--rt-font-mono);
   font-size: 10px;
   color: var(--rt-text-muted);
   white-space: nowrap;
@@ -494,7 +511,6 @@
 }
 
 .rt-bubble-edited {
-  font-family: var(--rt-font-mono);
   font-size: 9.5px;
   opacity: .6;
 }
@@ -510,7 +526,6 @@
 }
 
 .rt-read-receipt {
-  font-family: var(--rt-font-mono);
   font-size: 9.5px;
   color: var(--rt-text-muted);
   margin: 2px 4px 4px;
@@ -541,6 +556,7 @@
   display: flex;
   gap: 4px;
   align-items: center;
+  box-shadow: var(--rt-shadow-row);
 }
 
 .rt-typing-dot {
@@ -572,8 +588,7 @@
 /* ---------- Composer ---------- */
 
 .rt-composer {
-  padding: 12px 22px 18px;
-  border-top: 1px solid var(--rt-border);
+  padding: 14px 22px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -613,16 +628,25 @@
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  background: var(--rt-composer-field-bg);
+  background: var(--rt-surface-raised);
   border: 1px solid var(--rt-border);
-  border-radius: var(--rt-radius-field);
-  padding: 9px 10px 9px 14px;
+  border-radius: 20px;
+  padding: 9px 10px 9px 16px;
+  box-shadow: var(--rt-shadow-soft);
   transition: border-color .12s, box-shadow .12s;
 }
 
 .rt-field:focus-within {
   border-color: var(--rt-accent);
   box-shadow: 0 0 0 3px var(--rt-accent-ring);
+}
+
+/* .rt-app :focus-visible's global outline otherwise beats this textarea's
+   own outline:none on specificity, stacking a square browser-default ring
+   inside the field's own rounded one - the field's border/shadow above is
+   the intended focus indicator here. */
+.rt-field textarea:focus-visible {
+  outline: none;
 }
 
 .rt-field textarea {
@@ -675,6 +699,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 14px -4px var(--rt-accent-fill);
   transition: background .12s;
 }
 
@@ -686,6 +711,7 @@
   background: var(--rt-disabled-bg);
   color: var(--rt-disabled-icon);
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .rt-attachment-chip {
@@ -716,7 +742,6 @@
 }
 
 .rt-attachment-name {
-  font-family: var(--rt-font-mono);
   font-size: 11px;
   font-weight: 600;
   overflow: hidden;
@@ -725,7 +750,6 @@
 }
 
 .rt-attachment-size {
-  font-family: var(--rt-font-mono);
   font-size: 9.5px;
   color: var(--rt-text-muted);
 }
@@ -860,17 +884,6 @@
 
 .rt-empty-cta:hover {
   background: var(--rt-accent-fill-hover);
-}
-
-.rt-empty-wordmark {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  margin-bottom: 4px;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: var(--rt-text-secondary);
 }
 
 .rt-skeleton-log {

@@ -26,7 +26,7 @@ const MessageBubble = ({ item, contact }) => {
 		<div className={rowClasses} tabIndex={0} aria-label={label}>
 			{isOwn ? (
 				<>
-					<span className="rt-message-ts rt-mono">{formatClockTime(message.timestamp)}</span>
+					<span className="rt-message-ts">{formatClockTime(message.timestamp)}</span>
 					<div
 						className={`rt-bubble rt-bubble--sent${message.pending ? ' rt-bubble--sending' : ''}`}
 						style={{ borderRadius: anchorRadius(true, isGroupEnd) }}
@@ -52,7 +52,7 @@ const MessageBubble = ({ item, contact }) => {
 					>
 						{message.content}
 					</div>
-					<span className="rt-message-ts rt-mono">{formatClockTime(message.timestamp)}</span>
+					<span className="rt-message-ts">{formatClockTime(message.timestamp)}</span>
 				</>
 			)}
 		</div>
