@@ -14,7 +14,7 @@ const MoreIcon = () => (
 	</svg>
 );
 
-const ChatHeader = ({ contact, onBack }) => (
+const ChatHeader = ({ contact, onBack, presence }) => (
 	<div className="rt-chat-header">
 		<button
 			type="button"
@@ -29,11 +29,18 @@ const ChatHeader = ({ contact, onBack }) => (
 			firstName={contact.first_name}
 			lastName={contact.last_name}
 			size="header"
+			presence={presence === 'online'}
 		/>
 		<div className="rt-header-meta">
 			<span className="rt-header-name">
 				{contact.first_name} {contact.last_name}
 			</span>
+			{presence && (
+				<span className={`rt-header-presence${presence === 'online' ? ' is-online' : ''}`}>
+					<span className="rt-header-presence-dot" aria-hidden="true" />
+					{presence === 'online' ? 'Active now' : 'Offline'}
+				</span>
+			)}
 		</div>
 		<button type="button" aria-label="Conversation options" className="rt-options-btn">
 			<MoreIcon />

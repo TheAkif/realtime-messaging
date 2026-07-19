@@ -318,6 +318,7 @@ const initialState = {
 	chatHistory: null,
 	error: null,
 	theme: getInitialTheme(),
+	presenceByContactId: {},
 };
 
 const userSlice = createSlice({
@@ -357,6 +358,17 @@ const userSlice = createSlice({
         },
         themeChanged: (state, action) => {
             state.theme = action.payload;
+        },
+        presenceChanged: (state, action) => {
+            const { userId, status } = action.payload;
+            state.presenceByContactId[userId] = status;
+        },
+        messagesMarkedRead: (state, action) => {
+            const { myUserId } = action.payload;
+            if (!state.chatHistory) return;
+            state.chatHistory.forEach(m => {
+                if (m.sender === myUserId) m.read = true;
+            });
         },
 	},
 	extraReducers: builder => {
@@ -469,6 +481,13 @@ const userSlice = createSlice({
 	},
 });
 
-export const { resetRegistered, receiveLiveMessage, markConversationRead, themeChanged, clearError } =
-	userSlice.actions;
+export const {
+	resetRegistered,
+	receiveLiveMessage,
+	markConversationRead,
+	themeChanged,
+	clearError,
+	presenceChanged,
+	messagesMarkedRead,
+} = userSlice.actions;
 export default userSlice.reducer;
