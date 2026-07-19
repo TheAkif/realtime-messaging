@@ -1,7 +1,10 @@
 
+from unittest.mock import patch
+
 import pytest
 from rest_framework.test import APIClient
 from messaging.models import Message, UserProfile
+from messaging.rooms import room_name_for
 import pytest
 
 @pytest.mark.django_db
@@ -132,6 +135,63 @@ def test_fetching_history_marks_messages_read():
     response = client.get(f"/api/users/messages/{friend.id}/")
     assert response.status_code == 200
     assert Message.objects.filter(receiver=me, read=False).count() == 0
+
+
+@pytest.mark.django_db
+def test_fetching_history_pushes_a_live_read_receipt_to_the_sender():
+    # Live-broadcast half of the read-receipt feature: does the view tell
+    # the sender's room that their messages were just read. Checked via a
+    # mock rather than a real WebsocketCommunicator in the same test, since
+    # a synchronous Django test client sharing pytest-asyncio's own running
+    # loop trips async_to_sync's same-thread guard - a test-harness
+    # limitation, not a production one (Django's ASGI handler always runs
+    # sync views on its own worker-thread pool, where this pattern is
+    # standard). The consumer's side of this - relaying the group_send as a
+    # "read" frame to the sender - is covered separately in
+    # test_websockets.py by sending the same event directly.
+    me = UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="me3@example.com", password="password123",
+    )
+    friend = UserProfile.objects.create_user(
+        first_name="Priya", last_name="Raman", email="friend3@example.com", password="password123",
+    )
+    Message.objects.create(sender=friend, receiver=me, content="hey")
+
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "me3@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    with patch("messaging.views.async_to_sync") as mock_async_to_sync:
+        response = client.get(f"/api/users/messages/{friend.id}/")
+        assert response.status_code == 200
+
+        mock_async_to_sync.assert_called_once()
+        sync_call = mock_async_to_sync.return_value
+        sync_call.assert_called_once_with(
+            room_name_for(me.chat_uuid, friend.chat_uuid),
+            {"type": "messages_read_update", "reader_id": me.id},
+        )
+
+
+@pytest.mark.django_db
+def test_no_broadcast_when_there_was_nothing_new_to_mark_read():
+    # Re-fetching a conversation with nothing unread shouldn't push a
+    # pointless "read" frame on every single page load.
+    me = UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="me4@example.com", password="password123",
+    )
+    friend = UserProfile.objects.create_user(
+        first_name="Priya", last_name="Raman", email="friend4@example.com", password="password123",
+    )
+
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "me4@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    with patch("messaging.views.async_to_sync") as mock_async_to_sync:
+        response = client.get(f"/api/users/messages/{friend.id}/")
+        assert response.status_code == 200
+        mock_async_to_sync.assert_not_called()
 
 
 @pytest.mark.django_db

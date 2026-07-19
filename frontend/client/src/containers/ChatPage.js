@@ -11,6 +11,8 @@ import {
 	markConversationRead,
 	themeChanged,
 	syncThemePreference,
+	presenceChanged,
+	messagesMarkedRead,
 } from 'features/user';
 import { WS_URL } from 'config';
 import Sidebar from 'components/chat/Sidebar';
@@ -29,8 +31,16 @@ const SOCKET_ERROR_DISPLAY_MS = 4000;
 
 const ChatPage = () => {
 	const dispatch = useDispatch();
-	const { isAuthenticated, user, loading, historyLoading, conversations, chatHistory, theme } =
-		useSelector(state => state.user);
+	const {
+		isAuthenticated,
+		user,
+		loading,
+		historyLoading,
+		conversations,
+		chatHistory,
+		theme,
+		presenceByContactId,
+	} = useSelector(state => state.user);
 
 	const [activeChatUser, setActiveChatUser] = useState(null);
 	const [message, setMessage] = useState('');
@@ -115,6 +125,16 @@ const ChatPage = () => {
 
 				if (data.error) {
 					showSocketError(data.error);
+					return;
+				}
+
+				if (data.type === 'presence') {
+					dispatch(presenceChanged({ userId: data.user_id, status: data.status }));
+					return;
+				}
+
+				if (data.type === 'read') {
+					dispatch(messagesMarkedRead({ myUserId: user.id }));
 					return;
 				}
 
@@ -244,7 +264,11 @@ const ChatPage = () => {
 							justReconnectedCount={justReconnectedCount}
 							errorMessage={socketErrorMessage}
 						/>
-						<ChatHeader contact={activeChatUser} onBack={handleBack} />
+						<ChatHeader
+							contact={activeChatUser}
+							onBack={handleBack}
+							presence={wsStatus === 'connected' ? presenceByContactId[activeChatUser.id] : null}
+						/>
 						<MessageThread
 							messages={chatHistory || []}
 							pendingMessages={pendingMessages}

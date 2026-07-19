@@ -8,6 +8,7 @@ import json
 
 from messaging.rooms import room_name_for
 from messaging.ws_tickets import consume_ticket
+from messaging.presence import mark_online, mark_offline, is_online
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
 
+        connection_count = await sync_to_async(mark_online)(self.user.id)
+        if connection_count == 1:
+            # Only announce on the 0->1 transition - a second open tab/device
+            # shouldn't re-broadcast "online" for someone who already was.
+            await self.channel_layer.group_send(
+                self.room_name,
+                {"type": "presence_update", "user_id": self.user.id, "status": "online"},
+            )
+        # The group_send above only reaches the other party if *they're*
+        # already connected to this room - tell myself their current status
+        # directly so I'm not stuck assuming "offline" until they happen to
+        # reconnect or disconnect while I'm watching.
+        other_online = await sync_to_async(is_online)(self.other_user.id)
+        await self.send(text_data=json.dumps({
+            "type": "presence",
+            "user_id": self.other_user.id,
+            "status": "online" if other_online else "offline",
+        }))
+
     async def disconnect(self, close_code):
+        remaining_connections = None
+        if hasattr(self, "user"):
+            remaining_connections = await sync_to_async(mark_offline)(self.user.id)
         if hasattr(self, "room_name"):
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
+            # Only announce on the 1->0 transition - one of several open
+            # tabs/devices closing shouldn't flip presence offline while
+            # another is still connected.
+            if remaining_connections is not None and remaining_connections <= 0:
+                await self.channel_layer.group_send(
+                    self.room_name,
+                    {"type": "presence_update", "user_id": self.user.id, "status": "offline"},
+                )
 
     @database_sync_to_async
     def save_message(self, sender, receiver, message):
@@ -111,6 +142,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
         await self.send(
             text_data=json.dumps({"type": "typing", "sender": event["sender"]})
+        )
+
+    async def presence_update(self, event):
+        # Don't echo my own connect/disconnect back to myself.
+        if event["user_id"] == self.user.id:
+            return
+        await self.send(
+            text_data=json.dumps(
+                {"type": "presence", "user_id": event["user_id"], "status": event["status"]}
+            )
+        )
+
+    async def messages_read_update(self, event):
+        # Only the sender needs this - reflects back to the reader's own
+        # connection is harmless but pointless, so skip it.
+        if event["reader_id"] == self.user.id:
+            return
+        await self.send(
+            text_data=json.dumps({"type": "read", "reader_id": event["reader_id"]})
         )
 
     @database_sync_to_async

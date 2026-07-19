@@ -410,12 +410,27 @@
 }
 
 .rt-header-presence {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10.5px;
   color: var(--rt-text-muted);
 }
 
+.rt-header-presence-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rt-text-muted);
+  flex: none;
+}
+
 .rt-header-presence.is-online {
   color: var(--rt-presence-dot);
+}
+
+.rt-header-presence.is-online .rt-header-presence-dot {
+  background: var(--rt-presence-dot);
 }
 
 .rt-options-btn {

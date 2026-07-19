@@ -16,6 +16,7 @@ from messaging.serializers import (
     UserReadOnlySerializer,
 )
 from messaging.ws_tickets import create_ticket
+from messaging.rooms import room_name_for
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
@@ -81,12 +82,20 @@ class MessageViewSet(viewsets.ModelViewSet):
         response = super().list(request, *args, **kwargs)
         target_user_id = self.kwargs.get("target_user_id")
         if target_user_id:
-            # Viewing this conversation marks the other party's messages read.
-            # (Doesn't push a live WS update to the sender yet - they'll see
-            # the updated status next time their client re-fetches.)
-            Message.objects.filter(
+            # Viewing this conversation marks the other party's messages read,
+            # and pushes a live WS notification to whichever of their
+            # connections is currently in this room, so their read receipt
+            # updates without needing a refetch.
+            updated = Message.objects.filter(
                 sender_id=target_user_id, receiver=request.user, read=False
             ).update(read=True)
+            if updated:
+                target_user = get_object_or_404(User, pk=target_user_id)
+                room_name = room_name_for(request.user.chat_uuid, target_user.chat_uuid)
+                async_to_sync(get_channel_layer().group_send)(
+                    room_name,
+                    {"type": "messages_read_update", "reader_id": request.user.id},
+                )
         return response
 
 
