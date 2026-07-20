@@ -22,6 +22,7 @@ const Sidebar = ({
 	conversations,
 	activeChatUser,
 	typingFromUserId,
+	presenceByContactId,
 	onSelect,
 	theme,
 	onToggleTheme,
@@ -82,6 +83,7 @@ const Sidebar = ({
 							conversation={conversation}
 							isActive={activeChatUser?.id === conversation.id}
 							isTyping={typingFromUserId === conversation.id}
+							isOnline={presenceByContactId?.[conversation.id] === 'online'}
 							onSelect={onSelect}
 						/>
 					))}

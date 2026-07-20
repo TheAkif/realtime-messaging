@@ -335,20 +335,29 @@ const userSlice = createSlice({
             state.error = null;
         },
         receiveLiveMessage: (state, action) => {
-            const { message, contactId } = action.payload;
-            if (!state.chatHistory) state.chatHistory = [];
-            state.chatHistory.push(message);
+            const { message, otherPartyId, isActiveConversation, viewerId } = action.payload;
 
-            const conversation = state.conversations.find(c => c.id === contactId);
+            if (isActiveConversation) {
+                if (!state.chatHistory) state.chatHistory = [];
+                state.chatHistory.push(message);
+            }
+
+            const conversation = state.conversations.find(c => c.id === otherPartyId);
             if (conversation) {
                 conversation.last_message = {
                     content: message.content,
                     timestamp: message.timestamp,
                     sender: message.sender,
                 };
+                // A message for a conversation I'm not currently looking at
+                // is unread by definition - unless it's my own message
+                // going out, echoed back to me.
+                if (!isActiveConversation && message.sender !== viewerId) {
+                    conversation.unread_count = (conversation.unread_count || 0) + 1;
+                }
                 state.conversations = [
                     conversation,
-                    ...state.conversations.filter(c => c.id !== contactId),
+                    ...state.conversations.filter(c => c.id !== otherPartyId),
                 ];
             }
         },
@@ -460,6 +469,11 @@ const userSlice = createSlice({
 				state.loading = false;
 				state.conversations = action.payload;
                 state.error = null;
+                // Bulk snapshot of who's online right now - live deltas
+                // after this arrive over the WS presence broadcasts.
+                action.payload.forEach(c => {
+                    state.presenceByContactId[c.id] = c.online ? 'online' : 'offline';
+                });
 			})
 			.addCase(getConversations.rejected, (state, action) => {
 				state.loading = false;

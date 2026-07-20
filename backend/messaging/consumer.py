@@ -6,9 +6,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 import json
 
-from messaging.rooms import room_name_for
 from messaging.ws_tickets import consume_ticket
-from messaging.presence import mark_online, mark_offline, is_online
+from messaging.presence import mark_online, mark_offline
+from messaging.ws_groups import PRESENCE_GROUP, user_group_name
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +30,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close(code=4401)
             return
 
-        self.other_user_uuid = self.scope["url_route"]["kwargs"]["chat_uuid"]
-        self.other_user = await self.get_user_by_uuid(self.other_user_uuid)
-
-        if not self.other_user or self.other_user.id == self.user.id:
-            logger.warning(
-                "WS connect rejected: user %s requested unknown/self target %s",
-                self.user.id, self.other_user_uuid,
-            )
-            await self.close(code=4404)
-            return
-
-        # Canonical, order-independent room shared by both participants,
-        # regardless of which of them "other_user_uuid" refers to.
-        self.room_name = room_name_for(self.user.chat_uuid, self.other_user.chat_uuid)
-
-        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        # One connection per session, not per conversation: join a personal
+        # group (so any event addressed to me reaches this connection no
+        # matter what's on screen) and the global presence group (so I both
+        # hear about, and can be heard about by, every other user - not just
+        # whoever I happen to have a conversation open with).
+        self.user_group_name = user_group_name(self.user.id)
+        await self.channel_layer.group_add(self.user_group_name, self.channel_name)
+        await self.channel_layer.group_add(PRESENCE_GROUP, self.channel_name)
         await self.accept()
 
         connection_count = await sync_to_async(mark_online)(self.user.id)
@@ -53,32 +45,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Only announce on the 0->1 transition - a second open tab/device
             # shouldn't re-broadcast "online" for someone who already was.
             await self.channel_layer.group_send(
-                self.room_name,
+                PRESENCE_GROUP,
                 {"type": "presence_update", "user_id": self.user.id, "status": "online"},
             )
-        # The group_send above only reaches the other party if *they're*
-        # already connected to this room - tell myself their current status
-        # directly so I'm not stuck assuming "offline" until they happen to
-        # reconnect or disconnect while I'm watching.
-        other_online = await sync_to_async(is_online)(self.other_user.id)
-        await self.send(text_data=json.dumps({
-            "type": "presence",
-            "user_id": self.other_user.id,
-            "status": "online" if other_online else "offline",
-        }))
 
     async def disconnect(self, close_code):
         remaining_connections = None
         if hasattr(self, "user"):
             remaining_connections = await sync_to_async(mark_offline)(self.user.id)
-        if hasattr(self, "room_name"):
-            await self.channel_layer.group_discard(self.room_name, self.channel_name)
+        if hasattr(self, "user_group_name"):
+            await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
+            await self.channel_layer.group_discard(PRESENCE_GROUP, self.channel_name)
             # Only announce on the 1->0 transition - one of several open
             # tabs/devices closing shouldn't flip presence offline while
             # another is still connected.
             if remaining_connections is not None and remaining_connections <= 0:
                 await self.channel_layer.group_send(
-                    self.room_name,
+                    PRESENCE_GROUP,
                     {"type": "presence_update", "user_id": self.user.id, "status": "offline"},
                 )
 
@@ -101,9 +84,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"error": "Invalid message format."}))
             return
 
+        # There's no per-connection "other party" anymore - one session
+        # connection is shared across every conversation, so each outgoing
+        # frame has to say who it's for.
+        receiver_id = text_data_json.get("receiver_id")
+        receiver = await self.get_user_by_id(receiver_id) if receiver_id else None
+        if not receiver or receiver.id == self.user.id:
+            await self.send(text_data=json.dumps({"error": "Unknown message recipient."}))
+            return
+
         if text_data_json.get("type") == "typing":
             await self.channel_layer.group_send(
-                self.room_name,
+                user_group_name(receiver.id),
                 {"type": "user_typing", "sender": self.user.id},
             )
             return
@@ -112,17 +104,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message:
             return
 
-        timestamp = await self.save_message(self.user, self.other_user, message)
+        timestamp = await self.save_message(self.user, receiver, message)
 
-        await self.channel_layer.group_send(
-            self.room_name,
-            {
-                "type": "chat_message",
-                "message": message,
-                "sender": self.user.id,
-                "timestamp": timestamp,
-            },
-        )
+        event = {
+            "type": "chat_message",
+            "message": message,
+            "sender": self.user.id,
+            "receiver": receiver.id,
+            "timestamp": timestamp,
+        }
+        # Sent to the receiver's group so it arrives live regardless of what
+        # they have open, and to my own group so my other tabs/devices (and
+        # this same connection, rendering my own sent message) see it too.
+        await self.channel_layer.group_send(user_group_name(receiver.id), event)
+        await self.channel_layer.group_send(user_group_name(self.user.id), event)
 
     async def chat_message(self, event):
         await self.send(
@@ -131,21 +126,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "type": "message",
                     "message": event["message"],
                     "sender": event["sender"],
+                    "receiver": event["receiver"],
                     "timestamp": event["timestamp"],
                 }
             )
         )
 
     async def user_typing(self, event):
-        # Don't echo typing notifications back to the sender's own connection.
-        if event["sender"] == self.user.id:
-            return
+        # Only the intended receiver's group is sent this in the first
+        # place, so there's no self-echo to guard against here.
         await self.send(
             text_data=json.dumps({"type": "typing", "sender": event["sender"]})
         )
 
     async def presence_update(self, event):
-        # Don't echo my own connect/disconnect back to myself.
+        # The presence group has every connected user in it, including me -
+        # don't echo my own connect/disconnect back to myself.
         if event["user_id"] == self.user.id:
             return
         await self.send(
@@ -155,22 +151,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def messages_read_update(self, event):
-        # Only the sender needs this - reflects back to the reader's own
-        # connection is harmless but pointless, so skip it.
-        if event["reader_id"] == self.user.id:
-            return
+        # Only the original sender's group is sent this, so - same as
+        # user_typing - no self-echo guard is needed here either.
         await self.send(
             text_data=json.dumps({"type": "read", "reader_id": event["reader_id"]})
         )
-
-    @database_sync_to_async
-    def get_user_by_uuid(self, chat_uuid):
-        from messaging.models import UserProfile
-
-        try:
-            return UserProfile.objects.get(chat_uuid=chat_uuid)
-        except (UserProfile.DoesNotExist, ValueError):
-            return None
 
     @database_sync_to_async
     def get_user_by_id(self, user_id):
@@ -178,5 +163,5 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             return UserProfile.objects.get(id=user_id)
-        except (UserProfile.DoesNotExist, ValueError):
+        except (UserProfile.DoesNotExist, ValueError, TypeError):
             return None

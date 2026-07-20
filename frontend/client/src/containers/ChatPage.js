@@ -57,10 +57,24 @@ const ChatPage = () => {
 	const lastTypingSentAtRef = useRef(0);
 	const pendingIdRef = useRef(0);
 	const pendingMessagesRef = useRef([]);
+	// The socket now lives for the whole session, not for whichever
+	// conversation is open, so handlers registered once at connect time
+	// (onmessage, onopen) need a way to read "what's open right now"
+	// without going stale - a ref, same as pendingMessagesRef below.
+	const activeChatUserRef = useRef(null);
+	const userRef = useRef(null);
 
 	useEffect(() => {
 		pendingMessagesRef.current = pendingMessages;
 	}, [pendingMessages]);
+
+	useEffect(() => {
+		activeChatUserRef.current = activeChatUser;
+	}, [activeChatUser]);
+
+	useEffect(() => {
+		userRef.current = user;
+	}, [user]);
 
 	useEffect(() => {
 		dispatch(getConversations());
@@ -90,115 +104,131 @@ const ChatPage = () => {
 		);
 	}, []);
 
-	const connectWebSocket = useCallback(
-		async (contact) => {
-			let ticket;
-			try {
-				ticket = await getWsTicket();
-			} catch (err) {
-				console.error('Could not start chat session:', err);
-				showSocketError('Could not start chat session. Try selecting the conversation again.');
+	// One connection for the whole session: opened once we know who's
+	// logged in, kept alive across every conversation the user opens, and
+	// only torn down on logout/unmount.
+	const connectWebSocket = useCallback(async () => {
+		let ticket;
+		try {
+			ticket = await getWsTicket();
+		} catch (err) {
+			console.error('Could not start chat session:', err);
+			showSocketError('Could not start chat session. Try refreshing the page.');
+			return;
+		}
+
+		const socket = new WebSocket(`${WS_URL}/ws/chat/?ticket=${ticket}`);
+		ws.current = socket;
+
+		socket.onopen = () => {
+			setWsStatus('connected');
+			// Read the queue from a ref, and send as a plain side effect
+			// here rather than inside a setState updater - React 18
+			// StrictMode deliberately invokes functional updaters twice
+			// in dev to catch impurities, which would double-send here.
+			const toFlush = pendingMessagesRef.current;
+			if (toFlush.length > 0) {
+				toFlush.forEach(p =>
+					socket.send(JSON.stringify({ message: p.content, receiver_id: p.receiver }))
+				);
+				setJustReconnectedCount(toFlush.length);
+				setTimeout(() => setJustReconnectedCount(0), 3000);
+				pendingMessagesRef.current = [];
+				setPendingMessages([]);
+			}
+		};
+
+		socket.onmessage = (e) => {
+			const data = JSON.parse(e.data);
+			const currentUser = userRef.current;
+			const activeContact = activeChatUserRef.current;
+
+			if (data.error) {
+				showSocketError(data.error);
 				return;
 			}
 
-			const socket = new WebSocket(`${WS_URL}/ws/chat/${contact.chat_uuid}/?ticket=${ticket}`);
-			ws.current = socket;
+			if (data.type === 'presence') {
+				dispatch(presenceChanged({ userId: data.user_id, status: data.status }));
+				return;
+			}
 
-			socket.onopen = () => {
-				setWsStatus('connected');
-				// Read the queue from a ref, and send as a plain side effect
-				// here rather than inside a setState updater - React 18
-				// StrictMode deliberately invokes functional updaters twice
-				// in dev to catch impurities, which would double-send here.
-				const toFlush = pendingMessagesRef.current;
-				if (toFlush.length > 0) {
-					toFlush.forEach(p => socket.send(JSON.stringify({ message: p.content })));
-					setJustReconnectedCount(toFlush.length);
-					setTimeout(() => setJustReconnectedCount(0), 3000);
-					pendingMessagesRef.current = [];
-					setPendingMessages([]);
+			if (data.type === 'read') {
+				// Only relevant if I'm currently looking at my conversation
+				// with the person who just read my messages.
+				if (data.reader_id === activeContact?.id) {
+					dispatch(messagesMarkedRead({ myUserId: currentUser.id }));
 				}
-			};
+				return;
+			}
 
-			socket.onmessage = (e) => {
-				const data = JSON.parse(e.data);
-
-				if (data.error) {
-					showSocketError(data.error);
-					return;
-				}
-
-				if (data.type === 'presence') {
-					dispatch(presenceChanged({ userId: data.user_id, status: data.status }));
-					return;
-				}
-
-				if (data.type === 'read') {
-					dispatch(messagesMarkedRead({ myUserId: user.id }));
-					return;
-				}
-
-				if (data.type === 'typing') {
-					setIsContactTyping(true);
-					clearTimeout(typingClearTimeoutRef.current);
-					typingClearTimeoutRef.current = setTimeout(
-						() => setIsContactTyping(false),
-						TYPING_CLEAR_TIMEOUT_MS
-					);
-					return;
-				}
-
-				if (data.type === 'message') {
-					setIsContactTyping(false);
-					dispatch(
-						receiveLiveMessage({
-							contactId: contact.id,
-							message: {
-								id: `live-${data.sender}-${data.timestamp}`,
-								sender: data.sender,
-								receiver: data.sender === user.id ? contact.id : user.id,
-								content: data.message,
-								timestamp: data.timestamp,
-								read: false,
-							},
-						})
-					);
-				}
-			};
-
-			socket.onclose = (e) => {
-				if (e.code === 4401 || e.code === 4404) {
-					setWsStatus('disconnected');
-					return;
-				}
-				setWsStatus('reconnecting');
-				reconnectTimeoutRef.current = setTimeout(
-					() => connectWebSocket(contact),
-					RECONNECT_DELAY_MS
+			if (data.type === 'typing') {
+				if (data.sender !== activeContact?.id) return;
+				setIsContactTyping(true);
+				clearTimeout(typingClearTimeoutRef.current);
+				typingClearTimeoutRef.current = setTimeout(
+					() => setIsContactTyping(false),
+					TYPING_CLEAR_TIMEOUT_MS
 				);
-			};
-		},
-		[dispatch, user, showSocketError]
-	);
+				return;
+			}
 
-	useEffect(() => closeSocket, [closeSocket]);
+			if (data.type === 'message') {
+				// Who this exchange is with, from my perspective - my own
+				// echoed-back sends have `sender === me`, so the "other
+				// party" is the receiver in that case, and vice versa.
+				const otherPartyId = data.sender === currentUser.id ? data.receiver : data.sender;
+				const isActiveConversation = activeContact?.id === otherPartyId;
+
+				if (isActiveConversation) setIsContactTyping(false);
+
+				dispatch(
+					receiveLiveMessage({
+						otherPartyId,
+						isActiveConversation,
+						viewerId: currentUser.id,
+						message: {
+							id: `live-${data.sender}-${data.timestamp}`,
+							sender: data.sender,
+							receiver: data.receiver,
+							content: data.message,
+							timestamp: data.timestamp,
+							read: false,
+						},
+					})
+				);
+			}
+		};
+
+		socket.onclose = (e) => {
+			if (e.code === 4401 || e.code === 4404) {
+				setWsStatus('disconnected');
+				return;
+			}
+			setWsStatus('reconnecting');
+			reconnectTimeoutRef.current = setTimeout(connectWebSocket, RECONNECT_DELAY_MS);
+		};
+	}, [dispatch, showSocketError]);
+
+	useEffect(() => {
+		if (!user?.id) return;
+		connectWebSocket();
+		return closeSocket;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?.id]);
 
 	if (!isAuthenticated && !loading && user === null) return <Navigate to="/login" />;
 
 	const handleSelectConversation = (conversation) => {
-		closeSocket();
 		setActiveChatUser(conversation);
 		setMessage('');
 		setPendingMessages([]);
 		setIsContactTyping(false);
-		setWsStatus('disconnected');
 		dispatch(getChatHistory(conversation.id));
 		dispatch(markConversationRead(conversation.id));
-		connectWebSocket(conversation);
 	};
 
 	const handleBack = () => {
-		closeSocket();
 		setActiveChatUser(null);
 		dispatch(getConversations());
 	};
@@ -209,7 +239,7 @@ const ChatPage = () => {
 		setMessage('');
 
 		if (wsStatus === 'connected' && ws.current) {
-			ws.current.send(JSON.stringify({ message: content }));
+			ws.current.send(JSON.stringify({ message: content, receiver_id: activeChatUser.id }));
 		} else {
 			pendingIdRef.current += 1;
 			setPendingMessages(prev => [
@@ -231,7 +261,7 @@ const ChatPage = () => {
 		const now = Date.now();
 		if (now - lastTypingSentAtRef.current > TYPING_SEND_THROTTLE_MS) {
 			lastTypingSentAtRef.current = now;
-			ws.current.send(JSON.stringify({ type: 'typing' }));
+			ws.current.send(JSON.stringify({ type: 'typing', receiver_id: activeChatUser.id }));
 		}
 	};
 
@@ -251,6 +281,7 @@ const ChatPage = () => {
 					conversations={conversations}
 					activeChatUser={activeChatUser}
 					typingFromUserId={isContactTyping ? activeChatUser?.id : null}
+					presenceByContactId={presenceByContactId}
 					onSelect={handleSelectConversation}
 					theme={theme}
 					onToggleTheme={handleToggleTheme}
@@ -267,7 +298,7 @@ const ChatPage = () => {
 						<ChatHeader
 							contact={activeChatUser}
 							onBack={handleBack}
-							presence={wsStatus === 'connected' ? presenceByContactId[activeChatUser.id] : null}
+							presence={presenceByContactId[activeChatUser.id]}
 						/>
 						<MessageThread
 							messages={chatHistory || []}
