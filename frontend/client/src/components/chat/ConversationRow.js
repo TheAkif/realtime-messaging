@@ -1,7 +1,7 @@
 import Avatar from './Avatar';
 import { conversationTimeFor } from 'utils/chatFormat';
 
-const ConversationRow = ({ conversation, isActive, isTyping, onSelect }) => {
+const ConversationRow = ({ conversation, isActive, isTyping, isOnline, onSelect }) => {
 	const { id, first_name, last_name, last_message, unread_count } = conversation;
 	const hasUnread = unread_count > 0;
 
@@ -12,7 +12,13 @@ const ConversationRow = ({ conversation, isActive, isTyping, onSelect }) => {
 			aria-current={isActive ? 'true' : undefined}
 			onClick={() => onSelect(conversation)}
 		>
-			<Avatar userId={id} firstName={first_name} lastName={last_name} size="list" />
+			<Avatar
+				userId={id}
+				firstName={first_name}
+				lastName={last_name}
+				size="list"
+				presence={isOnline}
+			/>
 			<span className="rt-conversation-meta">
 				<span className="rt-conversation-top">
 					<span className="rt-conversation-name">
