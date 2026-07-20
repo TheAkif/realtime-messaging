@@ -21,7 +21,7 @@ const SearchIcon = () => (
 const Sidebar = ({
 	conversations,
 	activeChatUser,
-	typingFromUserId,
+	typingByContactId,
 	presenceByContactId,
 	onSelect,
 	theme,
@@ -82,7 +82,7 @@ const Sidebar = ({
 							key={conversation.id}
 							conversation={conversation}
 							isActive={activeChatUser?.id === conversation.id}
-							isTyping={typingFromUserId === conversation.id}
+							isTyping={!!typingByContactId?.[conversation.id]}
 							isOnline={presenceByContactId?.[conversation.id] === 'online'}
 							onSelect={onSelect}
 						/>

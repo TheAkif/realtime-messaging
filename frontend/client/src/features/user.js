@@ -319,6 +319,7 @@ const initialState = {
 	error: null,
 	theme: getInitialTheme(),
 	presenceByContactId: {},
+	typingByContactId: {},
 };
 
 const userSlice = createSlice({
@@ -371,6 +372,14 @@ const userSlice = createSlice({
         presenceChanged: (state, action) => {
             const { userId, status } = action.payload;
             state.presenceByContactId[userId] = status;
+        },
+        typingStatusChanged: (state, action) => {
+            const { userId, isTyping } = action.payload;
+            if (isTyping) {
+                state.typingByContactId[userId] = true;
+            } else {
+                delete state.typingByContactId[userId];
+            }
         },
         messagesMarkedRead: (state, action) => {
             const { myUserId } = action.payload;
@@ -503,5 +512,6 @@ export const {
 	clearError,
 	presenceChanged,
 	messagesMarkedRead,
+	typingStatusChanged,
 } = userSlice.actions;
 export default userSlice.reducer;
