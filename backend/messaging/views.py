@@ -16,7 +16,8 @@ from messaging.serializers import (
     UserReadOnlySerializer,
 )
 from messaging.ws_tickets import create_ticket
-from messaging.rooms import room_name_for
+from messaging.ws_groups import user_group_name
+from messaging.presence import is_online
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
@@ -90,10 +91,8 @@ class MessageViewSet(viewsets.ModelViewSet):
                 sender_id=target_user_id, receiver=request.user, read=False
             ).update(read=True)
             if updated:
-                target_user = get_object_or_404(User, pk=target_user_id)
-                room_name = room_name_for(request.user.chat_uuid, target_user.chat_uuid)
                 async_to_sync(get_channel_layer().group_send)(
-                    room_name,
+                    user_group_name(target_user_id),
                     {"type": "messages_read_update", "reader_id": request.user.id},
                 )
         return response
@@ -165,6 +164,7 @@ class ConversationListView(APIView):
                     "first_name": contact.first_name,
                     "last_name": contact.last_name,
                     "chat_uuid": contact.chat_uuid,
+                    "online": is_online(contact.id),
                     "last_message": (
                         {
                             "content": last_message.content,

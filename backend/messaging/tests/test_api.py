@@ -4,7 +4,8 @@ from unittest.mock import patch
 import pytest
 from rest_framework.test import APIClient
 from messaging.models import Message, UserProfile
-from messaging.rooms import room_name_for
+from messaging.presence import mark_online
+from messaging.ws_groups import user_group_name
 import pytest
 
 @pytest.mark.django_db
@@ -117,6 +118,35 @@ def test_conversations_include_last_message_and_unread_count():
 
 
 @pytest.mark.django_db
+def test_conversations_report_live_online_status():
+    # The sidebar needs to know who's online globally on load, not just
+    # whoever's conversation happens to be open - this is the REST snapshot
+    # that seeds it; live deltas after that arrive over the WS presence
+    # group instead.
+    me = UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="me5@example.com", password="password123",
+    )
+    online_friend = UserProfile.objects.create_user(
+        first_name="Priya", last_name="Raman", email="online5@example.com", password="password123",
+    )
+    offline_friend = UserProfile.objects.create_user(
+        first_name="Sam", last_name="Ortiz", email="offline5@example.com", password="password123",
+    )
+    mark_online(online_friend.id)
+
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "me5@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    response = client.get("/api/users/conversations")
+    assert response.status_code == 200
+
+    by_id = {c["id"]: c for c in response.data}
+    assert by_id[online_friend.id]["online"] is True
+    assert by_id[offline_friend.id]["online"] is False
+
+
+@pytest.mark.django_db
 def test_fetching_history_marks_messages_read():
     me = UserProfile.objects.create_user(
         first_name="Me", last_name="User", email="me2@example.com", password="password123",
@@ -168,7 +198,7 @@ def test_fetching_history_pushes_a_live_read_receipt_to_the_sender():
         mock_async_to_sync.assert_called_once()
         sync_call = mock_async_to_sync.return_value
         sync_call.assert_called_once_with(
-            room_name_for(me.chat_uuid, friend.chat_uuid),
+            user_group_name(friend.id),
             {"type": "messages_read_update", "reader_id": me.id},
         )
 
