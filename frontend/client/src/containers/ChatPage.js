@@ -13,6 +13,7 @@ import {
 	syncThemePreference,
 	presenceChanged,
 	messagesMarkedRead,
+	typingStatusChanged,
 } from 'features/user';
 import { WS_URL } from 'config';
 import Sidebar from 'components/chat/Sidebar';
@@ -40,6 +41,7 @@ const ChatPage = () => {
 		chatHistory,
 		theme,
 		presenceByContactId,
+		typingByContactId,
 	} = useSelector(state => state.user);
 
 	const [activeChatUser, setActiveChatUser] = useState(null);
@@ -47,12 +49,17 @@ const ChatPage = () => {
 	const [wsStatus, setWsStatus] = useState('disconnected');
 	const [pendingMessages, setPendingMessages] = useState([]);
 	const [justReconnectedCount, setJustReconnectedCount] = useState(0);
-	const [isContactTyping, setIsContactTyping] = useState(false);
 	const [socketErrorMessage, setSocketErrorMessage] = useState(null);
+
+	// Whether the open conversation's contact is typing is just a read of
+	// the same per-contact map the sidebar uses - no separate local state.
+	const isContactTyping = activeChatUser ? !!typingByContactId[activeChatUser.id] : false;
 
 	const ws = useRef(null);
 	const reconnectTimeoutRef = useRef(null);
-	const typingClearTimeoutRef = useRef(null);
+	// One pending clear-timeout per contact currently typing, keyed by
+	// their user id - typing is transient per sender, not a single flag.
+	const typingTimeoutsRef = useRef({});
 	const socketErrorTimeoutRef = useRef(null);
 	const lastTypingSentAtRef = useRef(0);
 	const pendingIdRef = useRef(0);
@@ -163,13 +170,14 @@ const ChatPage = () => {
 			}
 
 			if (data.type === 'typing') {
-				if (data.sender !== activeContact?.id) return;
-				setIsContactTyping(true);
-				clearTimeout(typingClearTimeoutRef.current);
-				typingClearTimeoutRef.current = setTimeout(
-					() => setIsContactTyping(false),
-					TYPING_CLEAR_TIMEOUT_MS
-				);
+				// Shown wherever that contact appears - the open thread and
+				// the sidebar row both just read this same map.
+				dispatch(typingStatusChanged({ userId: data.sender, isTyping: true }));
+				clearTimeout(typingTimeoutsRef.current[data.sender]);
+				typingTimeoutsRef.current[data.sender] = setTimeout(() => {
+					dispatch(typingStatusChanged({ userId: data.sender, isTyping: false }));
+					delete typingTimeoutsRef.current[data.sender];
+				}, TYPING_CLEAR_TIMEOUT_MS);
 				return;
 			}
 
@@ -180,7 +188,10 @@ const ChatPage = () => {
 				const otherPartyId = data.sender === currentUser.id ? data.receiver : data.sender;
 				const isActiveConversation = activeContact?.id === otherPartyId;
 
-				if (isActiveConversation) setIsContactTyping(false);
+				// Whoever just sent a message is, by definition, done typing.
+				clearTimeout(typingTimeoutsRef.current[data.sender]);
+				delete typingTimeoutsRef.current[data.sender];
+				dispatch(typingStatusChanged({ userId: data.sender, isTyping: false }));
 
 				dispatch(
 					receiveLiveMessage({
@@ -217,13 +228,18 @@ const ChatPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user?.id]);
 
+	useEffect(() => {
+		return () => {
+			Object.values(typingTimeoutsRef.current).forEach(clearTimeout);
+		};
+	}, []);
+
 	if (!isAuthenticated && !loading && user === null) return <Navigate to="/login" />;
 
 	const handleSelectConversation = (conversation) => {
 		setActiveChatUser(conversation);
 		setMessage('');
 		setPendingMessages([]);
-		setIsContactTyping(false);
 		dispatch(getChatHistory(conversation.id));
 		dispatch(markConversationRead(conversation.id));
 	};
@@ -280,7 +296,7 @@ const ChatPage = () => {
 				<Sidebar
 					conversations={conversations}
 					activeChatUser={activeChatUser}
-					typingFromUserId={isContactTyping ? activeChatUser?.id : null}
+					typingByContactId={typingByContactId}
 					presenceByContactId={presenceByContactId}
 					onSelect={handleSelectConversation}
 					theme={theme}
