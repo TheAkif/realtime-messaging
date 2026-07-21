@@ -512,6 +512,9 @@
 }
 
 .rt-message-ts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   color: var(--rt-text-muted);
   white-space: nowrap;
@@ -540,19 +543,47 @@
   background: none;
 }
 
-.rt-read-receipt {
-  font-size: 9.5px;
-  color: var(--rt-text-muted);
-  margin: 2px 4px 4px;
-  align-self: flex-end;
-}
-
-.rt-sending-pulse {
-  animation: rt-pulse 1.4s infinite;
-}
-
 .rt-bubble--sending {
   opacity: .65;
+}
+
+/* Message status - three bars echoing the Rabt wordmark's own signal
+   mark: one lights as it leaves you, two once it's delivered, all three
+   turn accent-coral once it's been read. */
+.rt-signal {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 9px;
+  flex: none;
+}
+
+.rt-signal span {
+  width: 2.5px;
+  border-radius: 1px;
+  background: transparent;
+  border: 1px solid var(--rt-text-muted);
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.rt-signal span:nth-child(1) { height: 4px; }
+.rt-signal span:nth-child(2) { height: 6.5px; }
+.rt-signal span:nth-child(3) { height: 9px; }
+
+.rt-signal.is-sent span:nth-child(1) {
+  background: var(--rt-text-muted);
+  border-color: var(--rt-text-muted);
+}
+
+.rt-signal.is-delivered span:nth-child(1),
+.rt-signal.is-delivered span:nth-child(2) {
+  background: var(--rt-text-muted);
+  border-color: var(--rt-text-muted);
+}
+
+.rt-signal.is-read span {
+  background: var(--rt-accent);
+  border-color: var(--rt-accent);
 }
 
 /* ---------- Typing indicator ---------- */

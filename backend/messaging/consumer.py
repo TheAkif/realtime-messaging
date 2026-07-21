@@ -7,7 +7,7 @@ from channels.db import database_sync_to_async
 import json
 
 from messaging.ws_tickets import consume_ticket
-from messaging.presence import mark_online, mark_offline
+from messaging.presence import mark_online, mark_offline, is_online
 from messaging.ws_groups import PRESENCE_GROUP, user_group_name
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {"type": "presence_update", "user_id": self.user.id, "status": "online"},
             )
 
+        # Catch up any messages that arrived while I was offline: they were
+        # never marked delivered at send time since I had no live
+        # connection for the sender to reach. Sweep them now and tell each
+        # original sender - this is what lets their tick move from "sent"
+        # to "delivered" even before I've opened that specific conversation.
+        newly_delivered_sender_ids = await self.mark_backlog_delivered()
+        for sender_id in newly_delivered_sender_ids:
+            await self.channel_layer.group_send(
+                user_group_name(sender_id),
+                {"type": "messages_delivered_update", "recipient_id": self.user.id},
+            )
+
     async def disconnect(self, close_code):
         remaining_connections = None
         if hasattr(self, "user"):
@@ -66,13 +78,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 )
 
     @database_sync_to_async
-    def save_message(self, sender, receiver, message):
+    def save_message(self, sender, receiver, message, delivered):
         from messaging.models import Message
 
         message_obj = Message.objects.create(
-            sender=sender, receiver=receiver, content=message
+            sender=sender, receiver=receiver, content=message, delivered=delivered
         )
         return message_obj.timestamp.isoformat()
+
+    @database_sync_to_async
+    def mark_backlog_delivered(self):
+        from messaging.models import Message
+
+        undelivered = Message.objects.filter(receiver=self.user, delivered=False)
+        sender_ids = list(undelivered.values_list("sender_id", flat=True).distinct())
+        undelivered.update(delivered=True)
+        return sender_ids
 
     async def receive(self, text_data):
         if not text_data:
@@ -104,7 +125,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message:
             return
 
-        timestamp = await self.save_message(self.user, receiver, message)
+        # If the receiver already has a live session, this message is
+        # delivered the moment it's saved - no separate round trip needed.
+        # Otherwise it stays undelivered until they next connect, at which
+        # point mark_backlog_delivered() catches it.
+        delivered = await sync_to_async(is_online)(receiver.id)
+        timestamp = await self.save_message(self.user, receiver, message, delivered)
 
         event = {
             "type": "chat_message",
@@ -112,6 +138,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "sender": self.user.id,
             "receiver": receiver.id,
             "timestamp": timestamp,
+            "delivered": delivered,
         }
         # Sent to the receiver's group so it arrives live regardless of what
         # they have open, and to my own group so my other tabs/devices (and
@@ -128,6 +155,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "sender": event["sender"],
                     "receiver": event["receiver"],
                     "timestamp": event["timestamp"],
+                    "delivered": event["delivered"],
                 }
             )
         )
@@ -155,6 +183,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # user_typing - no self-echo guard is needed here either.
         await self.send(
             text_data=json.dumps({"type": "read", "reader_id": event["reader_id"]})
+        )
+
+    async def messages_delivered_update(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {"type": "delivered", "recipient_id": event["recipient_id"]}
+            )
         )
 
     @database_sync_to_async

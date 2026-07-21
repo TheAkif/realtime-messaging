@@ -13,6 +13,7 @@ import {
 	syncThemePreference,
 	presenceChanged,
 	messagesMarkedRead,
+	messagesMarkedDelivered,
 	typingStatusChanged,
 } from 'features/user';
 import { WS_URL } from 'config';
@@ -169,6 +170,15 @@ const ChatPage = () => {
 				return;
 			}
 
+			if (data.type === 'delivered') {
+				// Only relevant if I'm currently looking at my conversation
+				// with the person who just received my backlog of messages.
+				if (data.recipient_id === activeContact?.id) {
+					dispatch(messagesMarkedDelivered({ myUserId: currentUser.id }));
+				}
+				return;
+			}
+
 			if (data.type === 'typing') {
 				// Shown wherever that contact appears - the open thread and
 				// the sidebar row both just read this same map.
@@ -205,6 +215,7 @@ const ChatPage = () => {
 							content: data.message,
 							timestamp: data.timestamp,
 							read: false,
+							delivered: data.delivered,
 						},
 					})
 				);

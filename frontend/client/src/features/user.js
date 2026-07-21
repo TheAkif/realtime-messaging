@@ -385,7 +385,15 @@ const userSlice = createSlice({
             const { myUserId } = action.payload;
             if (!state.chatHistory) return;
             state.chatHistory.forEach(m => {
-                if (m.sender === myUserId) m.read = true;
+                // Read implies delivered - you can't read what never arrived.
+                if (m.sender === myUserId) { m.read = true; m.delivered = true; }
+            });
+        },
+        messagesMarkedDelivered: (state, action) => {
+            const { myUserId } = action.payload;
+            if (!state.chatHistory) return;
+            state.chatHistory.forEach(m => {
+                if (m.sender === myUserId) m.delivered = true;
             });
         },
 	},
@@ -512,6 +520,7 @@ export const {
 	clearError,
 	presenceChanged,
 	messagesMarkedRead,
+	messagesMarkedDelivered,
 	typingStatusChanged,
 } = userSlice.actions;
 export default userSlice.reducer;

@@ -8,25 +8,47 @@ const anchorRadius = (isOwn, isGroupEnd) => {
 	return isOwn ? `16px 16px ${near}px 16px` : `16px 16px 16px ${near}px`;
 };
 
-const MessageBubble = ({ item, contact }) => {
+// pending (still queued locally) -> sent (server has it) -> delivered
+// (their device has it) -> read (they've seen it).
+const statusFor = (message) => {
+	if (message.pending) return 'pending';
+	if (message.read) return 'read';
+	if (message.delivered) return 'delivered';
+	return 'sent';
+};
+
+const SignalStatus = ({ status }) => (
+	<span className={`rt-signal is-${status}`} aria-hidden="true">
+		<span />
+		<span />
+		<span />
+	</span>
+);
+
+const MessageBubble = ({ item, contact, isLatestOwn }) => {
 	const { message, isOwn, isGroupStart, isGroupEnd } = item;
+	const status = isOwn ? statusFor(message) : null;
 	const rowClasses = [
 		'rt-message-row',
 		isOwn ? 'is-own' : '',
 		isGroupStart ? 'group-start' : '',
+		isLatestOwn ? 'always-show-ts' : '',
 	]
 		.filter(Boolean)
 		.join(' ');
 
 	const label = isOwn
-		? `You, ${formatClockTime(message.timestamp)}`
+		? `You, ${formatClockTime(message.timestamp)}, ${status}`
 		: `${contact.first_name}, ${formatClockTime(message.timestamp)}`;
 
 	return (
 		<div className={rowClasses} tabIndex={0} aria-label={label}>
 			{isOwn ? (
 				<>
-					<span className="rt-message-ts">{formatClockTime(message.timestamp)}</span>
+					<span className="rt-message-ts">
+						{formatClockTime(message.timestamp)}
+						<SignalStatus status={status} />
+					</span>
 					<div
 						className={`rt-bubble rt-bubble--sent${message.pending ? ' rt-bubble--sending' : ''}`}
 						style={{ borderRadius: anchorRadius(true, isGroupEnd) }}
