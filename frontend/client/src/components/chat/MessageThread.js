@@ -15,8 +15,13 @@ const MessageThread = ({
 	const logRef = useRef(null);
 	const allMessages = [...messages, ...pendingMessages];
 	const items = groupMessages(allMessages, myUserId);
-	const lastMessage = allMessages[allMessages.length - 1];
-	const showOwnStatus = lastMessage && lastMessage.sender === myUserId;
+	// The most recent message I sent always shows its status, even without
+	// hovering - every other bubble's status reveals on hover, same as its
+	// timestamp.
+	const ownMessages = allMessages.filter(m => m.sender === myUserId);
+	const latestOwnMessageId = ownMessages.length
+		? ownMessages[ownMessages.length - 1].id
+		: null;
 
 	useEffect(() => {
 		if (logRef.current) {
@@ -42,20 +47,13 @@ const MessageThread = ({
 						{item.label}
 					</div>
 				) : (
-					<MessageBubble key={item.key} item={item} contact={contact} />
+					<MessageBubble
+						key={item.key}
+						item={item}
+						contact={contact}
+						isLatestOwn={item.message.id === latestOwnMessageId}
+					/>
 				)
-			)}
-
-			{showOwnStatus && (
-				<div className="rt-read-receipt">
-					{lastMessage.pending ? (
-						<span className="rt-sending-pulse">Sending…</span>
-					) : lastMessage.read ? (
-						'Read'
-					) : (
-						'Delivered'
-					)}
-				</div>
 			)}
 
 			{isContactTyping && <TypingIndicator contact={contact} />}
