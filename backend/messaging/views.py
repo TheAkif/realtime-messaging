@@ -89,7 +89,7 @@ class MessageViewSet(viewsets.ModelViewSet):
             # updates without needing a refetch.
             updated = Message.objects.filter(
                 sender_id=target_user_id, receiver=request.user, read=False
-            ).update(read=True)
+            ).update(read=True, delivered=True)
             if updated:
                 async_to_sync(get_channel_layer().group_send)(
                     user_group_name(target_user_id),

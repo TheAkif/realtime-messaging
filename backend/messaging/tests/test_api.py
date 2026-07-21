@@ -165,6 +165,8 @@ def test_fetching_history_marks_messages_read():
     response = client.get(f"/api/users/messages/{friend.id}/")
     assert response.status_code == 200
     assert Message.objects.filter(receiver=me, read=False).count() == 0
+    # Read implies delivered - you can't read what never arrived.
+    assert Message.objects.filter(receiver=me, delivered=False).count() == 0
 
 
 @pytest.mark.django_db

@@ -1,11 +1,12 @@
 # tests/test_websockets.py
 import pytest
+from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from rest_framework.test import APIClient
 
 from realtime_messaging_project.asgi import application
-from messaging.models import UserProfile
+from messaging.models import Message, UserProfile
 from messaging.ws_groups import user_group_name
 from messaging.ws_tickets import create_ticket
 
@@ -274,6 +275,96 @@ async def test_consumer_relays_a_read_receipt_event_to_the_sender_only():
     # user2 is the reader - only user1's group was sent this, so user2 can't
     # receive it regardless.
     assert await communicator2.receive_nothing(timeout=0.2)
+
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_message_is_delivered_immediately_when_receiver_is_online():
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    communicator1 = await _connect("user1@example.com", "password123")
+    communicator2 = await _connect("user2@example.com", "password123")
+
+    # user2 connecting second broadcasts "online" to user1.
+    await communicator1.receive_json_from()
+
+    await communicator1.send_json_to({"message": "hi", "receiver_id": user2.id})
+
+    response2 = await communicator2.receive_json_from()
+    assert response2["delivered"] is True
+
+    # I get my own echo too, already showing delivered - no separate round
+    # trip needed for the common "they're already online" case.
+    response1 = await communicator1.receive_json_from()
+    assert response1["delivered"] is True
+
+    saved = await database_sync_to_async(Message.objects.get)(sender=user1, receiver=user2)
+    assert saved.delivered is True
+
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_message_is_not_delivered_when_receiver_is_offline():
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    communicator1 = await _connect("user1@example.com", "password123")
+
+    await communicator1.send_json_to({"message": "hi", "receiver_id": user2.id})
+
+    response1 = await communicator1.receive_json_from()
+    assert response1["delivered"] is False
+
+    saved = await database_sync_to_async(Message.objects.get)(sender=user1, receiver=user2)
+    assert saved.delivered is False
+
+    await communicator1.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_connecting_delivers_backlog_and_notifies_the_original_sender():
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    communicator1 = await _connect("user1@example.com", "password123")
+
+    # user2 is offline - this message is saved but stays undelivered.
+    await communicator1.send_json_to({"message": "hi", "receiver_id": user2.id})
+    response1 = await communicator1.receive_json_from()
+    assert response1["delivered"] is False
+
+    # user2 connects now - the backlog sweep in connect() should catch it
+    # and tell user1, without user2 ever having opened this conversation.
+    communicator2 = await _connect("user2@example.com", "password123")
+
+    presence_update = await communicator1.receive_json_from()
+    assert presence_update == {"type": "presence", "user_id": user2.id, "status": "online"}
+
+    delivered_update = await communicator1.receive_json_from()
+    assert delivered_update == {"type": "delivered", "recipient_id": user2.id}
+
+    saved = await database_sync_to_async(Message.objects.get)(sender=user1, receiver=user2)
+    assert saved.delivered is True
 
     await communicator1.disconnect()
     await communicator2.disconnect()
