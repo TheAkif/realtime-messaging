@@ -1,8 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from messaging.views import (
+    AvatarUploadView,
     ConversationListView,
     MessageViewSet,
+    ProfileUpdateView,
     RegisterViewSet,
     RetrieveUserViewSet,
     ThemePreferenceView,
@@ -21,4 +23,6 @@ urlpatterns = [
     path("ws-ticket", WSTicketView.as_view()),
     path("theme", ThemePreferenceView.as_view()),
     path("conversations", ConversationListView.as_view()),
+    path("profile", ProfileUpdateView.as_view()),
+    path("avatar", AvatarUploadView.as_view()),
 ]

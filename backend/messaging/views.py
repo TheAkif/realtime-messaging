@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render
 
 from rest_framework import viewsets, status
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,7 +11,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from messaging.models import Message
 from messaging.serializers import (
+    AvatarSerializer,
     MessageSerializer,
+    ProfileSerializer,
     ThemePreferenceSerializer,
     UserCreateSerializer,
     UserReadOnlySerializer,
@@ -164,6 +167,7 @@ class ConversationListView(APIView):
                     "first_name": contact.first_name,
                     "last_name": contact.last_name,
                     "chat_uuid": contact.chat_uuid,
+                    "avatar": contact.avatar.url if contact.avatar else None,
                     "online": is_online(contact.id),
                     "last_message": (
                         {
@@ -186,6 +190,37 @@ class ConversationListView(APIView):
             )
         )
         return Response(conversations, status=status.HTTP_200_OK)
+
+
+class ProfileUpdateView(APIView):
+    """
+    Lets a signed-in user edit their own name, bio, and phone number - all
+    optional, partial-update fields, same shape as ThemePreferenceView.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = ProfileSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AvatarUploadView(APIView):
+    """
+    Lets a signed-in user upload/replace their avatar photo. Separate from
+    ProfileUpdateView since this is multipart, not JSON.
+    """
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def put(self, request):
+        serializer = AvatarSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ThemePreferenceView(APIView):

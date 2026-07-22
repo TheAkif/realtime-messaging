@@ -1,12 +1,22 @@
 
+import io
 from unittest.mock import patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from rest_framework.test import APIClient
 from messaging.models import Message, UserProfile
 from messaging.presence import mark_online
 from messaging.ws_groups import user_group_name
 import pytest
+
+
+def _png_upload(name="avatar.png"):
+    buf = io.BytesIO()
+    Image.new("RGB", (10, 10), color="red").save(buf, format="PNG")
+    buf.seek(0)
+    return SimpleUploadedFile(name, buf.read(), content_type="image/png")
 
 @pytest.mark.django_db
 def test_user_token_generation():
@@ -224,6 +234,82 @@ def test_no_broadcast_when_there_was_nothing_new_to_mark_read():
         response = client.get(f"/api/users/messages/{friend.id}/")
         assert response.status_code == 200
         mock_async_to_sync.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_profile_update_persists_bio_phone_and_name():
+    me = UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="profile1@example.com", password="password123",
+    )
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "profile1@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    response = client.patch(
+        "/api/users/profile",
+        {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "bio": "Busy building things",
+            "phone_number": "+1234567890",
+        },
+        format="json",
+    )
+    assert response.status_code == 200
+
+    me.refresh_from_db()
+    assert me.first_name == "Updated"
+    assert me.last_name == "Name"
+    assert me.bio == "Busy building things"
+    assert me.phone_number == "+1234567890"
+
+
+@pytest.mark.django_db
+def test_avatar_upload_persists_and_is_retrievable_via_me():
+    me = UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="profile2@example.com", password="password123",
+    )
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "profile2@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    response = client.put("/api/users/avatar", {"avatar": _png_upload()}, format="multipart")
+    assert response.status_code == 200
+
+    me.refresh_from_db()
+    assert me.avatar
+
+    me_response = client.get("/api/users/me")
+    assert me_response.status_code == 200
+    assert me_response.data["avatar"] == me.avatar.url
+
+
+@pytest.mark.django_db
+def test_avatar_upload_rejects_oversized_image():
+    UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="profile3@example.com", password="password123",
+    )
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "profile3@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    with patch("messaging.serializers.MAX_AVATAR_SIZE_BYTES", 10):
+        response = client.put("/api/users/avatar", {"avatar": _png_upload()}, format="multipart")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_avatar_upload_rejects_non_image_file():
+    UserProfile.objects.create_user(
+        first_name="Me", last_name="User", email="profile4@example.com", password="password123",
+    )
+    client = APIClient()
+    token_res = client.post("/api/token/", {"email": "profile4@example.com", "password": "password123"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_res.data['access']}")
+
+    bad_file = SimpleUploadedFile("notes.txt", b"just some text", content_type="text/plain")
+    response = client.put("/api/users/avatar", {"avatar": bad_file}, format="multipart")
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db

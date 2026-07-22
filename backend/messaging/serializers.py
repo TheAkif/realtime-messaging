@@ -81,6 +81,9 @@ class UserReadOnlySerializer(serializers.ModelSerializer):
             "email",
             "chat_uuid",
             "theme_preference",
+            "avatar",
+            "bio",
+            "phone_number",
         )
 
 
@@ -89,3 +92,26 @@ class ThemePreferenceSerializer(serializers.ModelSerializer):
         model = User
         fields = ("theme_preference",)
         extra_kwargs = {"theme_preference": {"required": True, "allow_null": False}}
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "bio", "phone_number")
+
+
+MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("avatar",)
+        extra_kwargs = {"avatar": {"required": True, "allow_null": False}}
+
+    def validate_avatar(self, value):
+        if value.size > MAX_AVATAR_SIZE_BYTES:
+            raise serializers.ValidationError("Image must be smaller than 5MB.")
+        if not (value.content_type or "").startswith("image/"):
+            raise serializers.ValidationError("File must be an image.")
+        return value
