@@ -203,6 +203,16 @@ const ChatPage = () => {
 				delete typingTimeoutsRef.current[data.sender];
 				dispatch(typingStatusChanged({ userId: data.sender, isTyping: false }));
 
+				// It's arriving straight into the conversation I already have
+				// open, from the other party - that's as "seen" as it gets.
+				// Without this, a message that lands while the thread is
+				// already open (or any reply I send back while it's open)
+				// would sit at "delivered" forever, since opening a
+				// conversation is otherwise the only thing that marks it read.
+				if (isActiveConversation && data.sender !== currentUser.id && ws.current) {
+					ws.current.send(JSON.stringify({ type: 'read', receiver_id: data.sender }));
+				}
+
 				dispatch(
 					receiveLiveMessage({
 						otherPartyId,

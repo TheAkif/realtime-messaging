@@ -282,6 +282,67 @@ async def test_consumer_relays_a_read_receipt_event_to_the_sender_only():
 
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
+async def test_client_can_mark_messages_read_live_over_the_socket():
+    # Covers the case the REST read-marking path misses entirely: a
+    # conversation that's already open when a message arrives (or a reply
+    # goes out) live, with no fresh "open this conversation" REST call to
+    # trigger read-marking.
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    communicator1 = await _connect("user1@example.com", "password123")
+    communicator2 = await _connect("user2@example.com", "password123")
+
+    # user2 connecting second broadcasts "online" to user1.
+    await communicator1.receive_json_from()
+
+    await communicator1.send_json_to({"message": "hi", "receiver_id": user2.id})
+    await communicator2.receive_json_from()  # the message itself
+    await communicator1.receive_json_from()  # my own echo
+
+    # user2 has this conversation open and immediately reports it read.
+    await communicator2.send_json_to({"type": "read", "receiver_id": user1.id})
+
+    read_update = await communicator1.receive_json_from()
+    assert read_update == {"type": "read", "reader_id": user2.id}
+
+    saved = await database_sync_to_async(Message.objects.get)(sender=user1, receiver=user2)
+    assert saved.read is True
+    assert saved.delivered is True
+
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_marking_read_with_nothing_unread_sends_no_update():
+    user1 = UserProfile.objects.create_user(
+        email="user1@example.com", password="password123", first_name="User", last_name="One"
+    )
+    user2 = UserProfile.objects.create_user(
+        email="user2@example.com", password="password123", first_name="User", last_name="Two"
+    )
+
+    communicator1 = await _connect("user1@example.com", "password123")
+    communicator2 = await _connect("user2@example.com", "password123")
+    await communicator1.receive_json_from()
+
+    # Nothing was ever sent, so there's nothing to mark read - no spurious
+    # broadcast should reach user1.
+    await communicator2.send_json_to({"type": "read", "receiver_id": user1.id})
+    assert await communicator1.receive_nothing(timeout=0.2)
+
+    await communicator1.disconnect()
+    await communicator2.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
 async def test_message_is_delivered_immediately_when_receiver_is_online():
     user1 = UserProfile.objects.create_user(
         email="user1@example.com", password="password123", first_name="User", last_name="One"

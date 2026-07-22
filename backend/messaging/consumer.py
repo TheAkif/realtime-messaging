@@ -87,6 +87,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return message_obj.timestamp.isoformat()
 
     @database_sync_to_async
+    def mark_messages_read(self, sender_id):
+        from messaging.models import Message
+
+        return Message.objects.filter(
+            sender_id=sender_id, receiver=self.user, read=False
+        ).update(read=True, delivered=True)
+
+    @database_sync_to_async
     def mark_backlog_delivered(self):
         from messaging.models import Message
 
@@ -119,6 +127,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 user_group_name(receiver.id),
                 {"type": "user_typing", "sender": self.user.id},
             )
+            return
+
+        if text_data_json.get("type") == "read":
+            # The REST read-marking path (MessageViewSet.list()) only fires
+            # when a conversation is freshly opened. Without this, a message
+            # that arrives while that conversation is already open - or any
+            # reply sent back while it's open - would sit at "delivered"
+            # forever, since nothing ever told the server it had been seen.
+            updated = await self.mark_messages_read(receiver.id)
+            if updated:
+                await self.channel_layer.group_send(
+                    user_group_name(receiver.id),
+                    {"type": "messages_read_update", "reader_id": self.user.id},
+                )
             return
 
         message = text_data_json.get("message")
