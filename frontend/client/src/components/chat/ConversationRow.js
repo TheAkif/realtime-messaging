@@ -2,7 +2,7 @@ import Avatar from './Avatar';
 import { conversationTimeFor } from 'utils/chatFormat';
 
 const ConversationRow = ({ conversation, isActive, isTyping, isOnline, onSelect }) => {
-	const { id, first_name, last_name, last_message, unread_count } = conversation;
+	const { id, first_name, last_name, avatar, last_message, unread_count } = conversation;
 	const hasUnread = unread_count > 0;
 
 	return (
@@ -16,6 +16,7 @@ const ConversationRow = ({ conversation, isActive, isTyping, isOnline, onSelect 
 				userId={id}
 				firstName={first_name}
 				lastName={last_name}
+				photoUrl={avatar}
 				size="list"
 				presence={isOnline}
 			/>

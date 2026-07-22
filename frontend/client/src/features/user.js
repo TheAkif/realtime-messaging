@@ -286,6 +286,60 @@ export const syncThemePreference = createAsyncThunk(
 	}
 );
 
+export const updateProfile = createAsyncThunk(
+	'users/updateProfile',
+	async ({ first_name, last_name, bio, phone_number }, thunkAPI) => {
+		try {
+			const res = await fetch('/api/users/profile', {
+				method: 'PATCH',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ first_name, last_name, bio, phone_number }),
+			});
+
+			const data = await res.json();
+
+			if (res.status === 200) {
+				return data;
+			} else {
+				return thunkAPI.rejectWithValue(data);
+			}
+		} catch (err) {
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
+		}
+	}
+);
+
+export const uploadAvatar = createAsyncThunk(
+	'users/uploadAvatar',
+	async (file, thunkAPI) => {
+		try {
+			const formData = new FormData();
+			formData.append('avatar', file);
+
+			const res = await fetch('/api/users/avatar', {
+				method: 'PUT',
+				headers: {
+					Accept: 'application/json',
+				},
+				body: formData,
+			});
+
+			const data = await res.json();
+
+			if (res.status === 200) {
+				return data;
+			} else {
+				return thunkAPI.rejectWithValue(data);
+			}
+		} catch (err) {
+			return thunkAPI.rejectWithValue({ detail: 'Network error. Please try again.' });
+		}
+	}
+);
+
 export const logout = createAsyncThunk('users/logout', async (_, thunkAPI) => {
 	try {
 		const res = await fetch('/api/users/logout', {
@@ -309,6 +363,11 @@ export const logout = createAsyncThunk('users/logout', async (_, thunkAPI) => {
 
 const initialState = {
 	isAuthenticated: false,
+	// Distinct from `loading`: false at app boot doesn't just mean "not
+	// authenticated", it can also mean "haven't checked yet" - route guards
+	// need to tell those apart, or a fresh page load races the initial
+	// checkAuth() dispatch and briefly bounces to /login before it resolves.
+	authChecked: false,
 	user: null,
 	loading: false,
 	historyLoading: false,
@@ -447,9 +506,11 @@ const userSlice = createSlice({
 			.addCase(checkAuth.fulfilled, state => {
 				state.loading = false;
 				state.isAuthenticated = true;
+				state.authChecked = true;
 			})
 			.addCase(checkAuth.rejected, state => {
 				state.loading = false;
+				state.authChecked = true;
 			})
 			.addCase(logout.pending, state => {
 				state.loading = true;
@@ -507,6 +568,32 @@ const userSlice = createSlice({
 			})
 			.addCase(getChatHistory.rejected, (state, action) => {
 				state.historyLoading = false;
+                state.error = extractErrorMessage(action.payload);
+			})
+			.addCase(updateProfile.pending, state => {
+				state.loading = true;
+                state.error = null;
+			})
+			.addCase(updateProfile.fulfilled, (state, action) => {
+				state.loading = false;
+				state.user = { ...state.user, ...action.payload };
+                state.error = null;
+			})
+			.addCase(updateProfile.rejected, (state, action) => {
+				state.loading = false;
+                state.error = extractErrorMessage(action.payload);
+			})
+			.addCase(uploadAvatar.pending, state => {
+				state.loading = true;
+                state.error = null;
+			})
+			.addCase(uploadAvatar.fulfilled, (state, action) => {
+				state.loading = false;
+				state.user = { ...state.user, ...action.payload };
+                state.error = null;
+			})
+			.addCase(uploadAvatar.rejected, (state, action) => {
+				state.loading = false;
                 state.error = extractErrorMessage(action.payload);
 			});
 	},

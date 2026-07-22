@@ -11,6 +11,7 @@ const refreshRoute = require('./routes/auth/refresh');
 const registerRoute = require('./routes/auth/register');
 const verifyRoute = require('./routes/auth/verify');
 const chatRoute = require('./routes/chat/chat')
+const profileRoute = require('./routes/profile/profile')
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(refreshRoute);
 app.use(registerRoute);
 app.use(verifyRoute);
 app.use(chatRoute)
+app.use(profileRoute)
 
 app.use(express.static('client/build'));
 app.get('*', (req, res) => {
