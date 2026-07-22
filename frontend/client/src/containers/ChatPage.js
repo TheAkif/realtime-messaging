@@ -35,6 +35,7 @@ const ChatPage = () => {
 	const dispatch = useDispatch();
 	const {
 		isAuthenticated,
+		authChecked,
 		user,
 		loading,
 		historyLoading,
@@ -255,7 +256,7 @@ const ChatPage = () => {
 		};
 	}, []);
 
-	if (!isAuthenticated && !loading && user === null) return <Navigate to="/login" />;
+	if (!isAuthenticated && authChecked) return <Navigate to="/login" />;
 
 	const handleSelectConversation = (conversation) => {
 		setActiveChatUser(conversation);

@@ -7,6 +7,7 @@ import HomePage from 'containers/HomePage';
 import ChatPage from 'containers/ChatPage';
 import LoginPage from 'containers/LoginPage';
 import RegisterPage from 'containers/RegisterPage';
+import ProfilePage from 'containers/ProfilePage';
 
 // Access tokens live for 30 minutes (backend SIMPLE_JWT setting); refreshing
 // every 25 keeps a few minutes of buffer so an open tab never actually hits
@@ -39,6 +40,7 @@ const App = () => {
 			<Routes>
 				<Route path='/' element={<HomePage />} />
 				<Route path='/chat' element={<ChatPage />} />
+				<Route path='/profile' element={<ProfilePage />} />
 				<Route path='/login' element={<LoginPage />} />
 				<Route path='/register' element={<RegisterPage />} />
 			</Routes>

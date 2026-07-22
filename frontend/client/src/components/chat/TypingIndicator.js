@@ -6,6 +6,7 @@ const TypingIndicator = ({ contact }) => (
 			userId={contact.id}
 			firstName={contact.first_name}
 			lastName={contact.last_name}
+			photoUrl={contact.avatar}
 			size="thread"
 		/>
 		<div className="rt-typing-bubble">

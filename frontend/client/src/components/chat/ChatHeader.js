@@ -28,6 +28,7 @@ const ChatHeader = ({ contact, onBack, presence }) => (
 			userId={contact.id}
 			firstName={contact.first_name}
 			lastName={contact.last_name}
+			photoUrl={contact.avatar}
 			size="header"
 			presence={presence === 'online'}
 		/>

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import AccountMenu from './AccountMenu';
 import Avatar from './Avatar';
 import ConversationRow from './ConversationRow';
 import NoConversations from './NoConversations';
@@ -90,18 +91,18 @@ const Sidebar = ({
 				</nav>
 			)}
 			<div className="rt-sidebar-footer">
-				<Avatar
-					userId={currentUser.id}
-					firstName={currentUser.first_name}
-					lastName={currentUser.last_name}
-					size="thread"
-				/>
-				<span className="rt-sidebar-footer-name">
-					{currentUser.first_name} {currentUser.last_name}
-				</span>
-				<button type="button" className="rt-sidebar-footer-logout" onClick={onLogout}>
-					Log out
-				</button>
+				<AccountMenu onLogout={onLogout}>
+					<Avatar
+						userId={currentUser.id}
+						firstName={currentUser.first_name}
+						lastName={currentUser.last_name}
+						photoUrl={currentUser.avatar}
+						size="thread"
+					/>
+					<span className="rt-sidebar-footer-name">
+						{currentUser.first_name} {currentUser.last_name}
+					</span>
+				</AccountMenu>
 			</div>
 		</div>
 	);

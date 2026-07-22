@@ -65,6 +65,9 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     theme_preference = models.CharField(
         max_length=5, choices=THEME_CHOICES, null=True, blank=True
     )
+    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    bio = models.CharField(max_length=160, blank=True, default="")
+    phone_number = models.CharField(max_length=32, blank=True, default="")
 
     objects = UserProfileManager()
 
